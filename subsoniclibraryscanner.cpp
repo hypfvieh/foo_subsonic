@@ -9,6 +9,9 @@
 
 using namespace foo_subsonic; 
 
+/*
+	Retrieve a int value of a XML Element, or return a default value if element could not be found/read.
+*/
 int XmlIntOrDefault(TiXmlElement* element, const char* attribute, unsigned int default) {
 	auto temp = default;
 	if (element->QueryUnsignedAttribute(attribute, &temp) == TIXML_SUCCESS) {
@@ -19,15 +22,24 @@ int XmlIntOrDefault(TiXmlElement* element, const char* attribute, unsigned int d
 	}
 }
 
+/*
+	Retrieve a String value of a XML Element, or return a default value if element could not be found/read.
+*/
 pfc::string8 XmlStrOrDefault(TiXmlElement* element, const char* attribute, const char* default) {
 	auto tmp = element->Attribute(attribute);
 	return tmp == nullptr ? "" : tmp;
 }
 
+/*
+	Turn char to Hex-representation.
+*/
 char to_hex(char c) {
 	return c < 0xa ? '0' + c : 'a' - 0xa + c;
 }
 
+/*
+	Encode a URL (which means mask all none ASCII characters).
+*/
 pfc::string8 url_encode(const char *in) {
 	pfc::string8 out;
 	out.prealloc(strlen(in) * 3 + 1);
@@ -49,7 +61,10 @@ pfc::string8 url_encode(const char *in) {
 	return out;
 }
 
-
+/*
+	Build the request URL required for subsonic.
+	This will build the URL using the configured server and add the required parameters like client (c), user (u) and password (p).
+*/
 pfc::string8 buildRequestUrl(const char* restMethod, pfc::string8 urlparams) {
 	pfc::string8 url;
 	url << Preferences::connect_url_data;
@@ -68,7 +83,7 @@ pfc::string8 buildRequestUrl(const char* restMethod, pfc::string8 urlparams) {
 }
 
 /*
-  Checks if all required preferences were configured before
+  Checks if all required preferences were configured before, and if they are "correct".
 */
 BOOL check_preferences() {
 	if (Preferences::connect_url_data.is_empty()) {
@@ -82,22 +97,24 @@ BOOL check_preferences() {
 			console::error("Url has to start with http:// or https://");
 			return FALSE;
 		}
-		/* TODO: ENABLE THIS
+		
 		if (Preferences::proxy_settings_custom_data) {
-			url = Preferences::proxy_hostname_data;
+			url = Preferences::proxy_url_data;
 			url = url.toLower();
 			if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("socks://") && !url.startsWith("socks5://")) {
 				console::error("Proxy-Address has to start with http:// or socks5://");
 				return FALSE;
 			}
 		}
-		*/
+		
 	}
 
 	return TRUE;
 }
 
-
+/*
+	Setup everything and connect to server, calling given @restMethod.
+*/
 BOOL SubsonicLibraryScanner::connectAndGet(TiXmlDocument* doc, const char* restMethod, const char* urlparams) {
 
 	if (!check_preferences()) {
@@ -138,6 +155,9 @@ BOOL SubsonicLibraryScanner::connectAndGet(TiXmlDocument* doc, const char* restM
 	return checkForError(doc);
 }
 
+/*
+	Retrieve @size albums from server starting at @offset.
+*/
 void SubsonicLibraryScanner::getAlbumList(std::list<Album>* albumList, int size, int offset) {
 	pfc::string8 urlparms;
 	urlparms = "type=alphabeticalByName&size=";
@@ -197,6 +217,9 @@ void SubsonicLibraryScanner::getAlbumList(std::list<Album>* albumList, int size,
 	}
 }
 
+/*
+	Get all tracks for the album specified in @album.
+*/
 void SubsonicLibraryScanner::getAlbumTracks(Album *album) {
 	pfc::string8 urlparms;
 	urlparms = "id=";
@@ -269,6 +292,9 @@ bool SubsonicLibraryScanner::checkForError(TiXmlDocument* xml) {
 	return FALSE;
 }
 
+/*
+	If subsonic returned some kind of error, log it to foobar console.
+*/
 void SubsonicLibraryScanner::parsingError(const char* message, const char* errCode) {
 	console::printf("SubSonic Remote Error (ErrCode=%s): %s", errCode, message);
 }
@@ -279,7 +305,7 @@ void SubsonicLibraryScanner::parsingError(const char* message, const char* errCo
 */
 void SubsonicLibraryScanner::scan(HWND window) {
 	
-	// TODO: increase after debug
+	// TODO: increase after debug (max is 500)
 	int size = 20;
 	int offset = 0;
 
@@ -296,6 +322,9 @@ void SubsonicLibraryScanner::scan(HWND window) {
 	
 }
 
+/*
+	Return pointer to the list of fetched albums.
+*/
 std::list<Album>* SubsonicLibraryScanner::getFetchedAlbumList() {
 	return &albList;
 }

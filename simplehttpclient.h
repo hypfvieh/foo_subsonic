@@ -8,6 +8,9 @@
 #define PROXY_SYSTEM 1
 #define PROXY_CUSTOM 2
 
+/*
+	Container class for configuration of SimpleHTTPClient
+*/
 class SimpleHttpClientConfig {
 public:
 	void setProxyUrl(LPCWSTR _url) {
@@ -27,7 +30,9 @@ private:
 	std::wstring proxyUrl;
 };
 
-
+/*
+	Container class for URL parts required for different calls to WINHTTP.
+*/
 class SimpleHttpClientUrl {
 public:
 	void setHttpHost(LPCWSTR host) {
@@ -60,6 +65,10 @@ private:
 	std::wstring fullURL;
 };
 
+
+/*
+	SimpleHttpClient class
+*/
 class SimpleHttpClient {
 
 public:
@@ -68,11 +77,15 @@ public:
 	}
 
 	~SimpleHttpClient() {
-		if (m_hSession != NULL) WinHttpCloseHandle(m_hSession);
-		if (m_hConnection != NULL) WinHttpCloseHandle(m_hConnection);
 		if (m_request_handle != NULL) WinHttpCloseHandle(m_request_handle);
+		if (m_hSession != NULL) WinHttpCloseHandle(m_hSession);
+		if (m_hConnection != NULL) WinHttpCloseHandle(m_hConnection);		
 	};
 
+	/*
+		Open connection to server.
+		Use paramUrl to add parameters to the previously defined URL.
+	*/
 	unsigned long SimpleHttpClient::open(pfc::string8 paramUrl)
 	{
 		DWORD access_type;
@@ -98,11 +111,13 @@ public:
 		{
 			access_type = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
 			std::wstring proxyurl;
-			proxy_name = config.getProxyUrl();
-			// WinHttpOpen cannot handle trailing slash in the name, so here is some string gymnastics to keep WinHttpOpen happy
-			// proxy_str is intentionally declared at the function level to avoid pointing to the string in the destructed object
+			proxyurl = config.getProxyUrl();			
 
-			// TODO: do we have to fix the string like mentioned in comment?
+			if (proxyurl.back() == L'/') { // if we have trailing slash, remove it (WINHTTP doesn't like it)
+				proxyurl = proxyurl.substr(0, proxyurl.size() - 1); // remove trailing slash
+			}
+
+			proxy_name = proxyurl.c_str();
 		}
 
 		// Open session.
@@ -155,11 +170,13 @@ public:
 		return S_OK;
 	}
 
+	/*
+		Converts a given URL to a SimpleHttpClientUrl by parsing different information from the original string.
+	*/
 	void SimpleHttpClient::strToSimpleHttpClientUrl(pfc::string8 strUrl, SimpleHttpClientUrl* simpleUrl) {
 		pfc::string workstr = strUrl;
 
 		pfc::string workstr_lower = workstr.toLower();
-
 
 		simpleUrl->isHttps = workstr_lower.startsWith("https://");
 		simpleUrl->httpPort = simpleUrl->isHttps ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
@@ -201,6 +218,20 @@ public:
 		}
 	}
 
+	/*
+		Try to figure out the proxy configuration used in the system.
+		I assume that the client is used in an desktop application, so I guess the Internet Explorer proxy settings 
+		are the settings the user wants to have.
+
+		There a multiple ways of defining a proxy. 
+		The first one is to use PROXY_AUTODETECT, which uses WPAD protocol (which I've never seen in action).
+
+		The second is a Proxy URL is configured. This URL points to proxy.pac file (which has to be ECMAScript) which then will return the proxy to use for this particular URL.
+
+		The third option is using a manual configured proxy. This can either be "one for all" or different for each protocol (http, https, ftp ..).
+		If the third option is configured, I take the string found from the IE proxy settings and use this unmodified, assuming that the syntax returned by
+		WinHttpGetIEProxyConfigForCurrentUser is valid for WINHTTP as well (which seems to be the case in my testings).
+	*/
 	bool SimpleHttpClient::proxyRequired(HINTERNET session, WINHTTP_PROXY_INFO* info) {
 		WINHTTP_AUTOPROXY_OPTIONS autoproxy_options;
 		memset(&autoproxy_options, 0, sizeof(WINHTTP_AUTOPROXY_OPTIONS));
@@ -238,6 +269,9 @@ public:
 		return result ? true : false;
 	}
 
+	/*
+		Send the request to the server and return the response in &responsebuffer.
+	*/
 	void SimpleHttpClient::send_request(pfc::string8 &responsebuffer) {
 
 		WINHTTP_PROXY_INFO info;
@@ -343,7 +377,6 @@ private:
 	unsigned long report_failure(const char* errorMessage)
 	{
 		DWORD err = GetLastError();
-		// Should we log?
 		console::printf("SimpleHttpClient [ERR] (%i): %s", err, errorMessage);
 
 		return err;
