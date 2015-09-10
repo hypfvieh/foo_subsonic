@@ -1,0 +1,123 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Englisch (USA) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_PREFERENCES, DIALOG
+    BEGIN
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_PREFERENCES DIALOGEX 0, 0, 274, 183
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_CONNECT_URL_DATA,49,15,217,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_USERNAME_DATA,49,45,110,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PASSWORD_DATA,49,60,110,14,ES_PASSWORD | ES_AUTOHSCROLL
+    LTEXT           "URL:",IDC_CONNECT_URL_LBL,7,17,26,8
+    LTEXT           "Username:",IDC_USERNAME_LBL,6,47,37,8
+    LTEXT           "Password:",IDC_PASSWORD_LBL,6,64,34,8
+    EDITTEXT        IDC_CUSTOMPORT_DATA,119,30,40,14,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Custom Port:",IDC_CHECK_CUSTOMPORT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,49,33,58,10
+    GROUPBOX        "Proxy Settings",IDC_GRP_PROXY,6,118,258,61
+    CONTROL         "No Proxy",IDC_RADIO_PROXY_NO,"Button",BS_AUTORADIOBUTTON | WS_GROUP,11,132,45,10
+    CONTROL         "Use System Settings",IDC_RADIO_PROXY_SYSTEM,"Button",BS_AUTORADIOBUTTON,61,132,81,10
+    CONTROL         "Use Settings Below:",IDC_RADIO_PROXY_CUSTOM,"Button",BS_AUTORADIOBUTTON,149,132,79,10
+    LTEXT           "Proxy URL:",IDC_LBL_PROXY_USERNAME,9,152,37,8
+    EDITTEXT        IDC_PROXY_URL_DATA,51,147,174,14,ES_AUTOHSCROLL
+    CONTROL         "Allow self-signed Certificates",IDC_CHECK_SELFSIGNED,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,47,105,108,10
+    LTEXT           "Timeout:",IDC_LBL_TIMEOUT,6,81,29,8
+    EDITTEXT        IDC_CONNECT_TIMEOUT_DATA,49,75,40,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "seconds",IDC_LBL_TIMEOUT_SEC,92,80,27,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_MYPREFERENCES AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_PREFERENCES AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+#endif    // Englisch (USA) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
