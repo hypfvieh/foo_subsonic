@@ -4,12 +4,13 @@
 
 class myinitquit : public initquit {
 public:
-	void on_init() {
-		console::print("Sample component: on_init()");
+	void on_init() {		
+		console::print("Subsonic component: on_init()");		
 	}
 	void on_quit() {
-		console::print("Sample component: on_quit()");
+		console::print("Subsonic component: on_quit()");
 	}
 };
+
 
 static initquit_factory_t<myinitquit> g_myinitquit_factory;

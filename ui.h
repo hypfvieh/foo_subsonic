@@ -3,8 +3,12 @@
 #include "foo_subsonic.h"
 #include "subsoniclibraryscanner.h"
 
-#define ID_CONTEXT_UPDATECATALOG	WM_USER + 101
-#define ID_CONTEXT_UPDATEDONE       WM_APP + 102
+#define ID_CONTEXT_UPDATECATALOG			WM_USER + 101
+#define ID_CONTEXT_UPDATEPLAYLIST			WM_USER + 102
+
+#define ID_CONTEXT_UPDATECATALOG_DONE       WM_APP  + 201
+#define ID_CONTEXT_UPDATEPLAYLIST_DONE      WM_APP  + 202
+
 
 namespace foo_subsonic {
 	class CSubsonicUi : public ui_element_instance, public CWindowImpl<CSubsonicUi, CTreeViewCtrlEx> {
@@ -21,8 +25,10 @@ namespace foo_subsonic {
 			MESSAGE_HANDLER(WM_RBUTTONDOWN, OnContextMenu);
 			MESSAGE_HANDLER(WM_CREATE, OnCreate);
 			MESSAGE_HANDLER(WM_CONTEXTMENU, OnRButtonDown);
-			MESSAGE_HANDLER(ID_CONTEXT_UPDATEDONE, OnContextUpdateDone);
+			MESSAGE_HANDLER(ID_CONTEXT_UPDATECATALOG_DONE, OnContextCatalogUpdateDone);
+			MESSAGE_HANDLER(ID_CONTEXT_UPDATEPLAYLIST_DONE, OnContextPlaylistUpdateDone);
 			COMMAND_ID_HANDLER(ID_CONTEXT_UPDATECATALOG, OnContextCatalogUpdate);
+			COMMAND_ID_HANDLER(ID_CONTEXT_UPDATEPLAYLIST, OnContextPlaylistUpdate);
 			//COMMAND_ID_HANDLER(ID_CONTEXT_UPDATEDONE, OnContextUpdateDone);
 	//	    MSG_WM_ERASEBKGND(OnEraseBkgnd)
 	//		MSG_WM_PAINT(OnPaint)				
@@ -37,8 +43,13 @@ namespace foo_subsonic {
 		LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/);
 
 		LRESULT OnContextCatalogUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-		LRESULT OnContextUpdateDone(UINT, WPARAM, LPARAM, BOOL&);
+		LRESULT OnContextPlaylistUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+
+		LRESULT OnContextCatalogUpdateDone(UINT, WPARAM, LPARAM, BOOL&);
+		LRESULT OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL&);
 	
+		void populateTreeWithAlbums(std::list<Album>* albumList);
+
 		void OnPaint(CDCHandle);
 		BOOL OnEraseBkgnd(CDCHandle dc);
 

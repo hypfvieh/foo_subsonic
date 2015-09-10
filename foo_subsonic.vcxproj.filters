@@ -33,10 +33,19 @@
     <ClCompile Include="subsoniclibraryscanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="requestThread.cpp">
+    <ClCompile Include="stream_decoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stream_decoder.cpp">
+    <ClCompile Include="albumQueryThread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="playlistQueryThread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xmlcachedb.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xmlhelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -71,13 +80,25 @@
     <ClInclude Include="subsoniclibraryscanner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="requestThread.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="simplehttpclient.cpp">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="simplehttpclient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="albumQueryThread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="playlistQueryThread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="playlist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="xmlcachedb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="xmlhelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

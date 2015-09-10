@@ -4,10 +4,10 @@
 
 
 namespace foo_subsonic {
-	class RequestThread : public threaded_process_callback
+	class AlbumQueryThread : public threaded_process_callback
 	{
 	public:
-		RequestThread(SubsonicLibraryScanner *scanner, HWND window);
+		AlbumQueryThread(SubsonicLibraryScanner *scanner, HWND window);
 		void run(threaded_process_status &p_status, abort_callback &p_abort);
 
 	private:

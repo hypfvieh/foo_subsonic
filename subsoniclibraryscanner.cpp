@@ -4,83 +4,12 @@
 #include "album.h"
 #include "ui.h"
 #include "simplehttpclient.h"
+#include "xmlhelper.h"
 
 #include <winhttp.h>
 
 using namespace foo_subsonic; 
-
-/*
-	Retrieve a int value of a XML Element, or return a default value if element could not be found/read.
-*/
-int XmlIntOrDefault(TiXmlElement* element, const char* attribute, unsigned int default) {
-	auto temp = default;
-	if (element->QueryUnsignedAttribute(attribute, &temp) == TIXML_SUCCESS) {
-		return temp;
-	}
-	else {
-		return default;
-	}
-}
-
-/*
-	Retrieve a String value of a XML Element, or return a default value if element could not be found/read.
-*/
-pfc::string8 XmlStrOrDefault(TiXmlElement* element, const char* attribute, const char* default) {
-	auto tmp = element->Attribute(attribute);
-	return tmp == nullptr ? "" : tmp;
-}
-
-/*
-	Turn char to Hex-representation.
-*/
-char to_hex(char c) {
-	return c < 0xa ? '0' + c : 'a' - 0xa + c;
-}
-
-/*
-	Encode a URL (which means mask all none ASCII characters).
-*/
-pfc::string8 url_encode(const char *in) {
-	pfc::string8 out;
-	out.prealloc(strlen(in) * 3 + 1);
-
-	for (register const char *tmp = in; *tmp != '\0'; tmp++) {
-		auto c = static_cast<unsigned char>(*tmp);
-		if (isalnum(c)) {
-			out.add_char(c);
-		}
-		else if (isspace(c)) {
-			out.add_char('+');
-		}
-		else {
-			out.add_char('%');
-			out.add_char(to_hex(c >> 4));
-			out.add_char(to_hex(c % 16));
-		}
-	}
-	return out;
-}
-
-/*
-	Build the request URL required for subsonic.
-	This will build the URL using the configured server and add the required parameters like client (c), user (u) and password (p).
-*/
-pfc::string8 buildRequestUrl(const char* restMethod, pfc::string8 urlparams) {
-	pfc::string8 url;
-	url << Preferences::connect_url_data;
-	url << "/rest/";
-	url << restMethod << ".view";
-	url << "?v=1.8.0";
-	url << "&c=" << COMPONENT_SHORT_NAME;
-	url << "&u=" << Preferences::username_data;
-	url << "&p=" << url_encode(Preferences::password_data);
-
-	if (sizeof(urlparams) > 0) {
-		url << "&" << urlparams;
-	}
-
-	return url;
-}
+using namespace XmlHelper;
 
 /*
   Checks if all required preferences were configured before, and if they are "correct".
@@ -158,7 +87,7 @@ BOOL SubsonicLibraryScanner::connectAndGet(TiXmlDocument* doc, const char* restM
 /*
 	Retrieve @size albums from server starting at @offset.
 */
-void SubsonicLibraryScanner::getAlbumList(std::list<Album>* albumList, int size, int offset) {
+void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, std::list<Album>* albumList, int size, int offset) {
 	pfc::string8 urlparms;
 	urlparms = "type=alphabeticalByName&size=";
 	urlparms << size << "&offset=" << offset;
@@ -179,6 +108,7 @@ void SubsonicLibraryScanner::getAlbumList(std::list<Album>* albumList, int size,
 		TiXmlElement* firstChild = rootNode->FirstChildElement("albumList2");
 		if (firstChild) {
 			if (!rootNode->FirstChildElement("albumList2")->NoChildren()) { // list is not empty
+				unsigned int counter = 0;
 				for (TiXmlElement* e = firstChild->FirstChildElement("album"); e != NULL; e = e->NextSiblingElement("album")) {
 					Album a;
 
@@ -190,9 +120,9 @@ void SubsonicLibraryScanner::getAlbumList(std::list<Album>* albumList, int size,
 
 					a.set_coverArt(XmlStrOrDefault(e, "coverArt", ""));
 
-					a.set_artistid(XmlIntOrDefault(e, "artistId", 0));
-					a.set_id(XmlIntOrDefault(e, "id", 0));
-					a.set_parentid(XmlIntOrDefault(e, "parent", 0));
+					a.set_artistid(XmlStrOrDefault(e, "artistId", "0"));
+					a.set_id(XmlStrOrDefault(e, "id", "0"));
+					a.set_parentid(XmlStrOrDefault(e, "parent", "0"));
 					
 					a.set_duration(XmlIntOrDefault(e, "duration", 0));
 
@@ -201,11 +131,12 @@ void SubsonicLibraryScanner::getAlbumList(std::list<Album>* albumList, int size,
 
 					console::print(tmp);
 
-					// TODO: Fetch titles
 					getAlbumTracks(&a);
 
-					//albumList->add(&a);
 					albumList->push_back(a);
+
+					counter++;
+					p_status.set_progress(counter, offset + 1000);
 				}
 				// recurse until empty list is returned
 				offset += 500;
@@ -242,9 +173,10 @@ void SubsonicLibraryScanner::getAlbumTracks(Album *album) {
 					
 					t.set_duration(XmlIntOrDefault(e, "duration", 0));
 					t.set_tracknumber(XmlIntOrDefault(e, "track", 0));
-					t.set_parentId(XmlIntOrDefault(e, "parent", 0));
+					t.set_parentId(XmlStrOrDefault(e, "parent", "0"));
 					t.set_bitrate(XmlIntOrDefault(e, "bitrate", 0));
 					t.set_size(XmlIntOrDefault(e, "size", 0));
+					t.set_year(XmlStrOrDefault(e, "year", "0"));
 
 					t.set_id(XmlStrOrDefault(e, "id", ""));
 					t.set_artist(XmlStrOrDefault(e, "artist", ""));
@@ -271,6 +203,9 @@ void SubsonicLibraryScanner::getAlbumTracks(Album *album) {
 	}
 }
 
+void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status, std::list<Playlist>* playlists) {
+	//TODO: Retrieve playlist
+}
 
 /*
   Checks if returned Response of Subsonic is an error message.
@@ -303,23 +238,30 @@ void SubsonicLibraryScanner::parsingError(const char* message, const char* errCo
   Tries to query all albums from subsonic server.
   The result will be stored in the given albumList reference.
 */
-void SubsonicLibraryScanner::scan(HWND window) {
+void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_status &p_status) {
 	
 	// TODO: increase after debug (max is 500)
 	int size = 20;
 	int offset = 0;
 
-	getAlbumList(&albList, size, offset);
+	getAlbumList(p_status, &albList, size, offset);
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
 
 	// signal the main window that the thread has done fetching
-	SendMessage(window, ID_CONTEXT_UPDATEDONE, HIWORD(0), LOWORD(0));
+	SendMessage(window, ID_CONTEXT_UPDATECATALOG_DONE, HIWORD(0), LOWORD(0));
 	DWORD lastError = GetLastError();
 	if (lastError != ERROR_SUCCESS) {
 		console::printf("Got error while sending message to window: %i", lastError);
 	}
 	
+}
+
+/*
+	Tries to retrieve all playlists stored for the current user (or being public).
+*/
+void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window) {
+	// TODO: Get playlists
 }
 
 /*

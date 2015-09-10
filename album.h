@@ -10,18 +10,18 @@
 */
 
 class Album : public CoreEntity {
-	MEMBER(int, id)
-		STRING_MEMBER(title)
-		STRING_MEMBER(coverArt)
-		MEMBER(int, songCount)
-		MEMBER(long, duration)
-		MEMBER(int, artistid)
-		MEMBER(int, parentid)
+	STRING_MEMBER(id)
+	STRING_MEMBER(title)
+	STRING_MEMBER(coverArt)
+	MEMBER(int, songCount)
+	MEMBER(long, duration)
+	STRING_MEMBER(artistid)
+	STRING_MEMBER(parentid)
 
-		STRING_MEMBER(artist)
-		STRING_MEMBER(releasedate)
-		STRING_MEMBER(genre)
-		STRING_MEMBER(year)
+	STRING_MEMBER(artist)
+	STRING_MEMBER(releasedate)
+	STRING_MEMBER(genre)
+	STRING_MEMBER(year)
 public:
 
 	void addTrack(Track t) {
@@ -37,10 +37,7 @@ public:
 		CoreEntity(),
 		id(0),
 		songCount(0),
-		duration(0),
-		artistid(0),
-		parentid(0)
-		
+		duration(0)		
 		{};
 
 	~Album() {

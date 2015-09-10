@@ -1,7 +1,8 @@
 #include "foo_subsonic.h"
 #include "ui.h"
 #include "subsoniclibraryscanner.h"
-#include "requestThread.h"
+#include "albumQueryThread.h"
+#include "xmlcachedb.h"
 
 using namespace foo_subsonic;
 
@@ -28,6 +29,9 @@ LRESULT CSubsonicUi::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*b
 		rootNodes[i] = CTreeViewCtrlEx::InsertItem(name, NULL, TVI_ROOT);
 	}
 
+	// load cache if possible
+	std::list<Album>* albumList = XmlCacheDb::getInstance()->getAllAlbums();
+	populateTreeWithAlbums(albumList);
 	return lRet;
 }
 
@@ -129,11 +133,21 @@ void CSubsonicUi::OnPaint(CDCHandle) {
 LRESULT CSubsonicUi::OnContextCatalogUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
 	console::print("Catalog Menu Item clicked");
 
-	threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::RequestThread>(&scanner, m_hWnd),
-		threaded_process::flag_show_progress | threaded_process::flag_show_abort, m_hWnd, "Querying data from Subsonic Server");
+	threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::AlbumQueryThread>(&scanner, m_hWnd),
+		threaded_process::flag_show_progress | threaded_process::flag_show_abort, m_hWnd, "Querying album catalog from Subsonic Server");
 	
 	return 0;
 }
+
+LRESULT CSubsonicUi::OnContextPlaylistUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	console::print("Playlist Menu Item clicked");
+
+	threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::AlbumQueryThread>(&scanner, m_hWnd),
+		threaded_process::flag_show_progress | threaded_process::flag_show_abort, m_hWnd, "Querying playlist data from Subsonic Server");
+
+	return 0;
+}
+
 
 HTREEITEM CSubsonicUi::getRootTreeNodeForArtist(wchar_t bgnLetter) {
 	std::wstring alpha = _T("#ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -161,9 +175,7 @@ void CSubsonicUi::addTracksToAlbum(std::list<Album>::iterator &it, HTREEITEM alb
 
 }
 
-LRESULT CSubsonicUi::OnContextUpdateDone(UINT, WPARAM, LPARAM, BOOL&) {
-	std::list<Album>* albumList = scanner.getFetchedAlbumList();
-
+void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 	std::list<Album>::iterator it;
 
 	for (it = albumList->begin(); it != albumList->end(); it++) {
@@ -173,13 +185,13 @@ LRESULT CSubsonicUi::OnContextUpdateDone(UINT, WPARAM, LPARAM, BOOL&) {
 		pfc::stringcvt::string_wide_from_utf8 albumName(it->get_title());
 
 		HTREEITEM rootNode = getRootTreeNodeForArtist(artistName[0]);
-		
+
 		bool needNewNode = true;
 		HTREEITEM artistNode = nullptr;
 		if (ItemHasChildren(rootNode)) { // there are already some artists
 			for (HTREEITEM j = GetNextItem(rootNode, TVGN_CHILD); j; j = GetNextItem(j, TVGN_NEXT)) { // iterate all artists for grouping same names
 				CString str;
-				
+
 				if (GetItemText(j, str)) {
 					if (str == artistName) {
 						needNewNode = false;
@@ -188,7 +200,7 @@ LRESULT CSubsonicUi::OnContextUpdateDone(UINT, WPARAM, LPARAM, BOOL&) {
 					}
 				}
 			}
-			if (artistNode != nullptr) {				
+			if (artistNode != nullptr) {
 				HTREEITEM albumNode = InsertItem(albumName, artistNode, TVI_LAST);
 				addTracksToAlbum(it, albumNode);
 			}
@@ -203,6 +215,21 @@ LRESULT CSubsonicUi::OnContextUpdateDone(UINT, WPARAM, LPARAM, BOOL&) {
 
 	// Redraw
 	CTreeViewCtrlEx::Invalidate();
+}
+
+LRESULT CSubsonicUi::OnContextCatalogUpdateDone(UINT, WPARAM, LPARAM, BOOL&) {
+	std::list<Album>* albumList = scanner.getFetchedAlbumList();
+
+	XmlCacheDb::getInstance()->addAlbumsToSave(albumList);
+
+	populateTreeWithAlbums(albumList);
+
+	return 0;
+}
+
+LRESULT CSubsonicUi::OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL &)
+{
+	// TODO: fill in results to treectrl
 
 	return 0;
 }
