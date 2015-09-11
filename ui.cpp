@@ -23,15 +23,8 @@ LRESULT CSubsonicUi::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*b
 	// show +/- and the connecting lines
 	CTreeViewCtrlEx::ModifyStyle(0, TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS);
 
-	std::wstring alpha = _T("#ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-	for (unsigned int i = 0; i < alpha.length(); i++) {
-		wchar_t name[2] = { alpha[i] ,'\0' };
-		rootNodes[i] = CTreeViewCtrlEx::InsertItem(name, NULL, TVI_ROOT);
-	}
+	createRootTree(true, true);
 
-	// load cache if possible
-	std::list<Album>* albumList = XmlCacheDb::getInstance()->getAllAlbums();
-	populateTreeWithAlbums(albumList);
 	return lRet;
 }
 
@@ -55,7 +48,8 @@ LRESULT CSubsonicUi::OnContextMenu(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL
 	HMENU hMenu = ::CreatePopupMenu();
 
 	if (NULL != hMenu) {
-		::AppendMenu(hMenu, MF_STRING, ID_CONTEXT_UPDATECATALOG, _T("Catalog Update"));
+		::AppendMenu(hMenu, MF_STRING, ID_CONTEXT_UPDATECATALOG, _T("Retrieve/Update Subsonic Catalog"));
+		::AppendMenu(hMenu, MF_STRING, ID_CONTEXT_UPDATEPLAYLIST, _T("Retrieve/Update Subsonic Playlists"));
 		int xPos = GET_X_LPARAM(lParam);
 		int yPos = GET_Y_LPARAM(lParam);
 
@@ -102,34 +96,6 @@ LRESULT CSubsonicUi::OnLButtonDblClick(UINT, WPARAM, LPARAM, BOOL&) {
 	return 0;
 }
 
-BOOL CSubsonicUi::OnEraseBkgnd(CDCHandle dc) {
-	CRect rc; 
-	WIN32_OP_D(GetClientRect(&rc));
-	WTL::CBrush brush;
-	WIN32_OP_D(brush.CreateSolidBrush(m_callback->query_std_color(ui_color_background)) != NULL);
-	WIN32_OP_D(dc.FillRect(&rc, brush));
-	return TRUE;
-}
-
-void CSubsonicUi::OnPaint(CDCHandle) {
-	
-	WTL::CPaintDC dc(*this);
-	dc.SetTextColor(m_callback->query_std_color(ui_color_text));
-	dc.SetBkMode(TRANSPARENT);
-	SelectObjectScope fontScope(dc, (HGDIOBJ)m_callback->query_font_ex(ui_font_default));
-
-
-//	const UINT format = DT_NOPREFIX | DT_CENTER | DT_VCENTER | DT_SINGLELINE;
-//	CRect rc;
-//	WIN32_OP_D(GetClientRect(&rc));
-
-	
-	
-//	WIN32_OP_D(dc.DrawText(_T("TODO: REMOVE ME"), -1, &rc, format) > 0);
-	
-
-}
-
 LRESULT CSubsonicUi::OnContextCatalogUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
 	console::print("Catalog Menu Item clicked");
 
@@ -154,29 +120,58 @@ HTREEITEM CSubsonicUi::getRootTreeNodeForArtist(wchar_t bgnLetter) {
 	for (unsigned int i = 0; i < alpha.length(); i++) {
 		wchar_t c = alpha[i];
 		if (c == bgnLetter) {
-			return rootNodes[i];
+			return catalogRootNodes[i];
 		}
 	}
-	return rootNodes[0]; // should match for everything which is not beginning with a letter
+	return catalogRootNodes[0]; // should match for everything which is not beginning with a letter
 }
 
-void CSubsonicUi::addTracksToAlbum(std::list<Album>::iterator &it, HTREEITEM albumNode) {
-	std::list<Track>* trackList = it->getTracks();
+void CSubsonicUi::addTracksToAlbum(std::list<Track>* trackList, HTREEITEM albumNode, bool withTrackNumber) {
+	//std::list<Track>* trackList = it->getTracks();
 	std::list<Track>::iterator trackIterator;
 	for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
 		pfc::stringcvt::string_wide_from_utf8 trackName(trackIterator->get_title());
 		wchar_t track[250];
-		
-		swprintf(track, sizeof(track), L"%i) %s", trackIterator->get_tracknumber(), trackName.get_ptr());
+		if (withTrackNumber) {
+			swprintf(track, sizeof(track), L"%i) %s", trackIterator->get_tracknumber(), trackName.get_ptr());
+		}
+		else {
+			swprintf(track, sizeof(track), L"%s", trackName.get_ptr());
+		}
 		Track* store = &*trackIterator;
 		HTREEITEM titleNode = InsertItem(track, albumNode, TVI_LAST);
+
 		SetItemData(titleNode, (DWORD_PTR)store); // attach track meta data to node, so we can use this as shortcut for adding tracks to playlist
+	}
+
+}
+
+void CSubsonicUi::createRootTree(bool loadCachedAlbums, bool loadCachedPlaylists) {
+	rootNodes[TREE_ROOT_CATALOG]   = CTreeViewCtrlEx::InsertItem(L"Remote Catalog", NULL, TVI_ROOT);
+	rootNodes[TREE_ROOT_PLAYLISTS] = CTreeViewCtrlEx::InsertItem(L"Remote Playlists", NULL, TVI_ROOT);
+
+	std::wstring alpha = _T("#ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	for (unsigned int i = 0; i < alpha.length(); i++) {
+		wchar_t name[2] = { alpha[i] ,'\0' };
+		catalogRootNodes[i] = CTreeViewCtrlEx::InsertItem(name, rootNodes[TREE_ROOT_CATALOG], TVI_LAST);
+	}
+
+	CTreeViewCtrlEx::Expand(rootNodes[TREE_ROOT_CATALOG]);
+
+	if (loadCachedAlbums) {
+		populateTreeWithAlbums(XmlCacheDb::getInstance()->getAllAlbums());
+	}
+	if (loadCachedPlaylists) {
+
 	}
 
 }
 
 void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 	std::list<Album>::iterator it;
+
+	CTreeViewCtrlEx::DeleteAllItems(); // remove current content
+	createRootTree(false, true); // recreate the root tree, remove cached albums but retain the playlists
 
 	for (it = albumList->begin(); it != albumList->end(); it++) {
 		//pfc::stringcvt::string_os_from_utf8 albumname(albumList[i]->get_title());
@@ -202,14 +197,18 @@ void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 			}
 			if (artistNode != nullptr) {
 				HTREEITEM albumNode = InsertItem(albumName, artistNode, TVI_LAST);
-				addTracksToAlbum(it, albumNode);
+
+				std::list<Track>* trackList = it->getTracks();
+				addTracksToAlbum(trackList, albumNode, true);
 			}
 		}
 
 		if (needNewNode) {
 			HTREEITEM artistRoot = InsertItem(artistName, rootNode, TVI_LAST); // add artist as new entry
 			HTREEITEM albumNode = InsertItem(albumName, artistRoot, TVI_LAST); // add the current album as entry to artist
-			addTracksToAlbum(it, albumNode);
+			
+			std::list<Track>* trackList = it->getTracks();
+			addTracksToAlbum(trackList, albumNode, true);
 		}
 	}
 
@@ -217,10 +216,31 @@ void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 	CTreeViewCtrlEx::Invalidate();
 }
 
-LRESULT CSubsonicUi::OnContextCatalogUpdateDone(UINT, WPARAM, LPARAM, BOOL&) {
-	std::list<Album>* albumList = scanner.getFetchedAlbumList();
+void CSubsonicUi::populateTreeWithPlaylists(std::list<Playlist>* playlists) {
+	std::list<Playlist>::iterator it;
 
-	XmlCacheDb::getInstance()->addAlbumsToSave(albumList);
+	CTreeViewCtrlEx::DeleteAllItems(); // remove current content
+	createRootTree(true, false); // recreate the root tree, remove cached albums but retain the playlists
+
+	for (it = playlists->begin(); it != playlists->end(); it++) {
+		//pfc::stringcvt::string_os_from_utf8 albumname(albumList[i]->get_title());
+
+		pfc::stringcvt::string_wide_from_utf8 playlistName(it->get_name());		
+
+		HTREEITEM rootNode = rootNodes[TREE_ROOT_PLAYLISTS];
+		
+		
+		HTREEITEM albumNode = InsertItem(playlistName, rootNode, TVI_LAST); // add the current album as entry to artist
+		std::list<Track>* tracks = it->getTracks();
+		addTracksToAlbum(tracks, albumNode, false);		
+	}
+
+	// Redraw
+	CTreeViewCtrlEx::Invalidate();
+}
+
+LRESULT CSubsonicUi::OnContextCatalogUpdateDone(UINT, WPARAM, LPARAM, BOOL&) {
+	std::list<Album>* albumList = XmlCacheDb::getInstance()->getAllAlbums();
 
 	populateTreeWithAlbums(albumList);
 
@@ -229,7 +249,12 @@ LRESULT CSubsonicUi::OnContextCatalogUpdateDone(UINT, WPARAM, LPARAM, BOOL&) {
 
 LRESULT CSubsonicUi::OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL &)
 {
-	// TODO: fill in results to treectrl
+	
+	std::list<Playlist>* playlists = XmlCacheDb::getInstance()->getAllPlaylists();
+
+	// TODO: save playlists in cache
+
+	populateTreeWithPlaylists(playlists);
 
 	return 0;
 }

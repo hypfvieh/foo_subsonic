@@ -5,6 +5,7 @@
 #include "ui.h"
 #include "simplehttpclient.h"
 #include "xmlhelper.h"
+#include "xmlcachedb.h"
 
 #include <winhttp.h>
 
@@ -107,24 +108,12 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, std
 	if (rootNode) {
 		TiXmlElement* firstChild = rootNode->FirstChildElement("albumList2");
 		if (firstChild) {
-			if (!rootNode->FirstChildElement("albumList2")->NoChildren()) { // list is not empty
+			if (!firstChild->NoChildren()) { // list is not empty
 				unsigned int counter = 0;
 				for (TiXmlElement* e = firstChild->FirstChildElement("album"); e != NULL; e = e->NextSiblingElement("album")) {
 					Album a;
 
-					a.set_artist(XmlStrOrDefault(e, "artist", ""));
-					a.set_title(XmlStrOrDefault(e, "title", "")); // use title instead of album, otherwise multi disc albums were mixed
-
-					a.set_genre(XmlStrOrDefault(e, "genre", ""));
-					a.set_year(XmlStrOrDefault(e, "year", ""));
-
-					a.set_coverArt(XmlStrOrDefault(e, "coverArt", ""));
-
-					a.set_artistid(XmlStrOrDefault(e, "artistId", "0"));
-					a.set_id(XmlStrOrDefault(e, "id", "0"));
-					a.set_parentid(XmlStrOrDefault(e, "parent", "0"));
-					
-					a.set_duration(XmlIntOrDefault(e, "duration", 0));
+					parseAlbumInfo(e, &a);
 
 					pfc::string8 tmp = "Found artist=";
 					tmp << a.get_artist() << ", album=" << a.get_title() << ", coverArt=" << a.get_coverArt();
@@ -139,7 +128,7 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, std
 					p_status.set_progress(counter, offset + 1000);
 				}
 				// recurse until empty list is returned
-				offset += 500;
+				offset += SUBSONIC_MAX_ALBUMLIST_SIZE;
 				// TODO: Later do recursing!    
 				// getAlbumList(p_abort, albumList, 500, offset);
 
@@ -166,45 +155,89 @@ void SubsonicLibraryScanner::getAlbumTracks(Album *album) {
 	if (rootNode) {
 		TiXmlElement* firstChild = rootNode->FirstChildElement("album");
 		if (firstChild) {
-			if (!rootNode->FirstChildElement("album")->NoChildren()) { // list is not empty
+			if (!firstChild->NoChildren()) { // list is not empty
 				
 				for (TiXmlElement* e = firstChild->FirstChildElement("song"); e != NULL; e = e->NextSiblingElement("song")) {
-					Track t = Track();
-					
-					t.set_duration(XmlIntOrDefault(e, "duration", 0));
-					t.set_tracknumber(XmlIntOrDefault(e, "track", 0));
-					t.set_parentId(XmlStrOrDefault(e, "parent", "0"));
-					t.set_bitrate(XmlIntOrDefault(e, "bitrate", 0));
-					t.set_size(XmlIntOrDefault(e, "size", 0));
-					t.set_year(XmlStrOrDefault(e, "year", "0"));
-
-					t.set_id(XmlStrOrDefault(e, "id", ""));
-					t.set_artist(XmlStrOrDefault(e, "artist", ""));
-					t.set_album(XmlStrOrDefault(e, "album", ""));
-
-					t.set_genre(XmlStrOrDefault(e, "genre", ""));
-					t.set_contentType(XmlStrOrDefault(e, "contentType", ""));
-					t.set_coverArt(XmlStrOrDefault(e, "coverArt", "0"));
-					t.set_title(XmlStrOrDefault(e, "title", ""));
-					t.set_suffix(XmlStrOrDefault(e, "suffix", ""));
-
-					// build and add url for streaming
-					pfc::string8 idparam = "id=";
-					idparam << t.get_id();
-
-					pfc::string8 streamUrl = buildRequestUrl("stream", idparam);
-					t.set_streamUrl(streamUrl);
-
-					album->addTrack(t);					
-					
+					Track t = Track();					
+					parseTrackInfo(e, &t);
+					album->addTrack(t);										
 				}
 			}
 		}
 	}
 }
 
+/*
+	Retrieve all playlists from subsonic server.
+*/
 void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status, std::list<Playlist>* playlists) {
 	//TODO: Retrieve playlist
+
+	TiXmlDocument doc;
+
+	if (!connectAndGet(&doc, "getPlaylists", "")) { // error occoured, we are done
+		return;
+	}
+
+	if (playlists == nullptr) {
+		console::error("Playlists should not be null!");
+		return;
+	}
+
+	TiXmlElement* rootNode = doc.FirstChildElement("subsonic-response");
+	if (rootNode) {
+		TiXmlElement* firstChild = rootNode->FirstChildElement("playlists");
+		if (firstChild) {
+			if (firstChild->NoChildren()) { // list is not empty
+				for (TiXmlElement* e = firstChild->FirstChildElement("playlist"); e != NULL; e = e->NextSiblingElement("playlist")) {
+					Playlist p;
+
+					p.set_comment(XmlStrOrDefault(e, "comment", ""));
+					p.set_coverArt(XmlStrOrDefault(e, "covertArt", ""));
+					p.set_duration(XmlIntOrDefault(e, "duration", 0));
+					p.set_id(XmlStrOrDefault(e, "id", "0"));
+					p.set_isPublic(XmlBoolOrDefault(e, "public", false));
+					p.set_name(XmlStrOrDefault(e, "name", "No Name given"));
+					p.set_owner(XmlStrOrDefault(e, "owner", ""));
+					p.set_songcount(XmlIntOrDefault(e, "songCount", 0));
+
+					// retrieve playlist entries
+					getPlaylistEntries(&p);
+					playlists->push_back(p);
+				}
+			}
+		}
+	}
+}
+
+/*
+	Get all entries (tracks) for the playlist specified in @playlist.
+*/
+void SubsonicLibraryScanner::getPlaylistEntries(Playlist *playlist) {
+	pfc::string8 urlparms;
+	urlparms = "id=";
+	urlparms << playlist->get_id();
+
+	TiXmlDocument doc;
+
+	if (!connectAndGet(&doc, "getPlaylist", urlparms)) { // error occoured, we are done
+		return;
+	}
+
+	TiXmlElement* rootNode = doc.FirstChildElement("subsonic-response");
+	if (rootNode) {
+		TiXmlElement* firstChild = rootNode->FirstChildElement("playlist");
+		if (firstChild) {
+			if (!firstChild->NoChildren()) { // list is not empty
+
+				for (TiXmlElement* e = firstChild->FirstChildElement("entry"); e != NULL; e = e->NextSiblingElement("entry")) {
+					Track t = Track();
+					parseTrackInfo(e, &t);
+					playlist->addTrack(t);
+				}
+			}
+		}
+	}
 }
 
 /*
@@ -241,10 +274,10 @@ void SubsonicLibraryScanner::parsingError(const char* message, const char* errCo
 void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_status &p_status) {
 	
 	// TODO: increase after debug (max is 500)
-	int size = 20;
+	int size = 2; // SUBSONIC_MAX_ALBUMLIST_SIZE
 	int offset = 0;
 
-	getAlbumList(p_status, &albList, size, offset);
+	getAlbumList(p_status, XmlCacheDb::getInstance()->getAllAlbums(), size, offset);
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
 
@@ -260,13 +293,15 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 /*
 	Tries to retrieve all playlists stored for the current user (or being public).
 */
-void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window) {
-	// TODO: Get playlists
-}
+void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window, threaded_process_status &p_status) {
+	getPlaylists(p_status, XmlCacheDb::getInstance()->getAllPlaylists());
 
-/*
-	Return pointer to the list of fetched albums.
-*/
-std::list<Album>* SubsonicLibraryScanner::getFetchedAlbumList() {
-	return &albList;
+	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
+
+	// signal the main window that the thread has done fetching
+	SendMessage(window, ID_CONTEXT_UPDATEPLAYLIST_DONE, HIWORD(0), LOWORD(0));
+	DWORD lastError = GetLastError();
+	if (lastError != ERROR_SUCCESS) {
+		console::printf("Got error while sending message to window: %i", lastError);
+	}
 }

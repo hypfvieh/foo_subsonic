@@ -9,6 +9,8 @@
 #define ID_CONTEXT_UPDATECATALOG_DONE       WM_APP  + 201
 #define ID_CONTEXT_UPDATEPLAYLIST_DONE      WM_APP  + 202
 
+#define TREE_ROOT_CATALOG					1
+#define TREE_ROOT_PLAYLISTS					2
 
 namespace foo_subsonic {
 	class CSubsonicUi : public ui_element_instance, public CWindowImpl<CSubsonicUi, CTreeViewCtrlEx> {
@@ -29,9 +31,6 @@ namespace foo_subsonic {
 			MESSAGE_HANDLER(ID_CONTEXT_UPDATEPLAYLIST_DONE, OnContextPlaylistUpdateDone);
 			COMMAND_ID_HANDLER(ID_CONTEXT_UPDATECATALOG, OnContextCatalogUpdate);
 			COMMAND_ID_HANDLER(ID_CONTEXT_UPDATEPLAYLIST, OnContextPlaylistUpdate);
-			//COMMAND_ID_HANDLER(ID_CONTEXT_UPDATEDONE, OnContextUpdateDone);
-	//	    MSG_WM_ERASEBKGND(OnEraseBkgnd)
-	//		MSG_WM_PAINT(OnPaint)				
 		END_MSG_MAP()
 
 		CSubsonicUi(ui_element_config::ptr, ui_element_instance_callback_ptr p_callback);
@@ -49,9 +48,8 @@ namespace foo_subsonic {
 		LRESULT OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL&);
 	
 		void populateTreeWithAlbums(std::list<Album>* albumList);
-
-		void OnPaint(CDCHandle);
-		BOOL OnEraseBkgnd(CDCHandle dc);
+		void populateTreeWithPlaylists(std::list<Playlist>* playlists);
+		void createRootTree(bool loadCachedAlbums, bool loadCachedPlaylists);
 
 		HWND get_wnd() { return *this; }
 		void set_configuration(ui_element_config::ptr config) { m_config = config; }
@@ -68,10 +66,11 @@ namespace foo_subsonic {
 	private:
 		ui_element_config::ptr m_config;
 		SubsonicLibraryScanner scanner;
-		HTREEITEM rootNodes[28];
+		HTREEITEM rootNodes[2];
+		HTREEITEM catalogRootNodes[28];
 		HTREEITEM getRootTreeNodeForArtist(wchar_t bgnLetter);
 
-		void CSubsonicUi::addTracksToAlbum(std::list<Album>::iterator &it, HTREEITEM albumNode);
+		void addTracksToAlbum(std::list<Track>* trackList, HTREEITEM albumNode, bool withTrackNumber);
 
 	protected:
 		// this must be declared as protected for ui_element_impl_withpopup<> to work.

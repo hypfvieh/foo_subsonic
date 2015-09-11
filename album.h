@@ -19,7 +19,6 @@ class Album : public CoreEntity {
 	STRING_MEMBER(parentid)
 
 	STRING_MEMBER(artist)
-	STRING_MEMBER(releasedate)
 	STRING_MEMBER(genre)
 	STRING_MEMBER(year)
 public:
@@ -35,7 +34,6 @@ public:
 
 	Album() :
 		CoreEntity(),
-		id(0),
 		songCount(0),
 		duration(0)		
 		{};
