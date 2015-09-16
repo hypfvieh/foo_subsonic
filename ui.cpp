@@ -3,6 +3,8 @@
 #include "subsoniclibraryscanner.h"
 #include "albumQueryThread.h"
 #include "xmlcachedb.h"
+#include "playlistupdater.h"
+
 
 using namespace foo_subsonic;
 
@@ -13,15 +15,17 @@ CSubsonicUi::CSubsonicUi(ui_element_config::ptr config, ui_element_instance_call
 LRESULT CSubsonicUi::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/) {
 	LRESULT lRet = DefWindowProc(uMsg, wParam, lParam);
 
+	CTreeViewCtrlEx::SetDlgCtrlID(IDC_TREEVIEWCTRL);
+
 	console::printf("Found text color: %x", m_callback->query_std_color(ui_color_text));
 	console::printf("Found bg color: %x", m_callback->query_std_color(ui_color_background));
 
-	COLORREF color = m_callback->query_std_color(ui_color_text);
-	CTreeViewCtrlEx::SetTextColor(color);
+	CTreeViewCtrlEx::SetTextColor(m_callback->query_std_color(ui_color_text));
 	CTreeViewCtrlEx::SetBkColor(m_callback->query_std_color(ui_color_background));
 
 	// show +/- and the connecting lines
-	CTreeViewCtrlEx::ModifyStyle(0, TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS);
+	CTreeViewCtrlEx::ModifyStyle(1, TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS);
+	//CTreeViewCtrlEx::SetExtendedStyle()
 
 	createRootTree(true, true);
 
@@ -80,19 +84,32 @@ LRESULT CSubsonicUi::OnLButtonDblClick(UINT, WPARAM, LPARAM, BOOL&) {
 			tmp << track->get_title() << ", Artist=" << track->get_artist();
 			console::print(tmp);
 
-			//TODO: Add title to playlist
-			static_api_ptr_t<playlist_manager> pm;
-			t_size playlist = pm->get_active_playlist();
 
 			// TODO: Does not work for HTTPS!
 			const char* url = track->get_streamUrl().c_str();
 
-			pm->playlist_undo_backup(playlist);
-			pm->playlist_add_locations(playlist, pfc::list_single_ref_t<const char*>(url), TRUE, m_hWnd);
+			//TODO: Add title to playlist
+			// static_api_ptr_t<playlist_manager> pm;
+			// t_size playlist = pm->get_active_playlist();
 
+//			pm->playlist_add_items(playlist, pfc::list_single_ref_t<metadb_handle_ptr>(trkptr), bit_array_true());
+
+//			pm->playlist_undo_backup(playlist);
+//			pm->playlist_add_locations(playlist, pfc::list_single_ref_t<const char*>(url), TRUE, m_hWnd);
+
+			static_api_ptr_t<playlist_incoming_item_filter_v2>()->process_locations_async(
+				pfc::list_single_ref_t<const char*>(url),
+				playlist_incoming_item_filter_v2::op_flag_background,
+				NULL,
+				NULL,
+				m_hWnd,
+				p_notify
+				);
+			/*				*/
 		}
 
 	}
+	// TODO: Allow album/artist selection to add complete album/all title of artist
 	return 0;
 }
 
@@ -257,4 +274,82 @@ LRESULT CSubsonicUi::OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL &)
 	populateTreeWithPlaylists(playlists);
 
 	return 0;
+}
+
+LRESULT CSubsonicUi::OnDrag(int idCtrl, LPNMHDR pnmh, BOOL& bHandled) {
+	HTREEITEM selected = GetSelectedItem();
+	if (selected) {
+//		CIDropSource* pdsrc = new CIDropSource;
+//		CIDataObject* pdobj = new CIDataObject(pdsrc);
+		// Init the supported format
+		FORMATETC fmtetc = { 0 };
+		fmtetc.cfFormat = CF_TEXT;
+		fmtetc.dwAspect = DVASPECT_CONTENT;
+		fmtetc.lindex = -1;
+		fmtetc.tymed = TYMED_HGLOBAL;
+		// Init the medium used
+		STGMEDIUM medium = { 0 };
+		medium.tymed = TYMED_HGLOBAL;
+		// medium.hGlobal = init to something
+		// Add it to DataObject
+//		pdobj->SetData(&fmtetc, &medium, TRUE); // Release the medium for me
+												// add more formats and medium if needed
+												// Initiate the Drag & Drop
+//		::DoDragDrop(pdobj, pdsrc, DROPEFFECT_COPY, &dwEffect);
+		
+	}
+	return 0;
+}
+
+LRESULT CSubsonicUi::OnBeginDrag(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/) {
+
+	if (uMsg == TVN_BEGINDRAG) {
+		HTREEITEM selected = GetSelectedItem();
+		if (selected) {
+			m_dragging = true;
+
+			
+
+			POINT pt = { 0 };
+			m_dragImage = &CTreeViewCtrlEx::CreateDragImage(selected);
+			m_dragImage->BeginDrag(0, 0, 0);
+
+			::ClientToScreen(m_hWnd, &pt);
+			m_dragImage->DragEnter(NULL, pt);
+
+			SetCapture();
+			return 0;
+		}
+
+	}
+
+
+	return 0;
+}
+
+void CSubsonicUi::OnMouseMove(UINT nFlags, CPoint point) {
+	if (m_dragging) {
+		POINT pt = point;
+		ClientToScreen(&pt);
+		CImageList::DragMove(pt);
+	}
+}
+
+void CSubsonicUi::OnLButtonUp(UINT nFlags, CPoint point) {
+	if (m_dragging) {
+		m_dragging = false;
+		CImageList::DragLeave(*this);
+		CImageList::EndDrag();
+		ReleaseCapture();
+		// move the dragged item
+	}
+}
+
+void CSubsonicUi::notify(const GUID & p_what, t_size p_param1, const void * p_param2, t_size p_param2size) {
+	if (p_what == ui_element_notify_colors_changed || p_what == ui_element_notify_font_changed) {
+		CTreeViewCtrlEx::SetTextColor(m_callback->query_std_color(ui_color_text));
+		CTreeViewCtrlEx::SetBkColor(m_callback->query_std_color(ui_color_background));
+
+		Invalidate();
+	}
 }

@@ -101,6 +101,12 @@
     <ClInclude Include="xmlhelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="playlistupdater.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MSelectTree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="readme.txt" />

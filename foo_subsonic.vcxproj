@@ -117,8 +117,10 @@
     <ClInclude Include="CoreEntity.h" />
     <ClInclude Include="foo_subsonic.h" />
     <ClInclude Include="meta.h" />
+    <ClInclude Include="MSelectTree.h" />
     <ClInclude Include="playlist.h" />
     <ClInclude Include="playlistQueryThread.h" />
+    <ClInclude Include="playlistupdater.h" />
     <ClInclude Include="preferences.h" />
     <ClInclude Include="albumQueryThread.h" />
     <ClInclude Include="resource.h" />
