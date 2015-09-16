@@ -1,1 +1,6 @@
 foo_subsonic.sdf
+.vs/*
+Debug/*
+Debugtinyxml/*
+ipch/*
+x64/*

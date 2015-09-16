@@ -11,7 +11,13 @@ public:
 
 		if (p_items.get_count() > 0) {
 			p_items.get_item(0).get_ptr()->get_info(finfo);
+
+			
+			finfo.info_set("ARTIST", "blubb");
+			finfo.meta_set("ALBUM", "blablabla");
+			finfo.set_length(200);
 			finfo.info_set_ex("TITLE", sizeof("TITLE"), "Tralala", sizeof("Tralala"));
+						
 		}
 		static_api_ptr_t<playlist_manager> plm;
 		plm->activeplaylist_add_items(p_items, bit_array_true());

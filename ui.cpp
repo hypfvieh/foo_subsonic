@@ -80,16 +80,14 @@ LRESULT CSubsonicUi::OnLButtonDblClick(UINT, WPARAM, LPARAM, BOOL&) {
 
 		if (track_ptr != NULL) {
 			Track* track = reinterpret_cast<Track*>(track_ptr);
-			pfc::string8 tmp = "Got Track=";
-			tmp << track->get_title() << ", Artist=" << track->get_artist();
-			console::print(tmp);
 
+			console::formatter() << "Got Track=" << track->get_title() << ", Artist=" << track->get_artist();
 
-			// TODO: Does not work for HTTPS!
 			const char* url = track->get_streamUrl().c_str();
 
 			//TODO: Add title to playlist
 			// static_api_ptr_t<playlist_manager> pm;
+			 
 			// t_size playlist = pm->get_active_playlist();
 
 //			pm->playlist_add_items(playlist, pfc::list_single_ref_t<metadb_handle_ptr>(trkptr), bit_array_true());
