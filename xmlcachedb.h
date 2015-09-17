@@ -37,8 +37,8 @@ public:
 		return instance;
 	}
 	
-	void addAlbumsToSave(std::list<Album>* albumList);
-	void addPlaylistsToSave(std::list<Playlist>* playlists);
 	std::list<Album>* getAllAlbums();
 	std::list<Playlist>* getAllPlaylists();
+
+	bool getTrackDetailsByUrl(const char* url, Track* t);
 };

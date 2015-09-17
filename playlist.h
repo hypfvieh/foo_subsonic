@@ -22,7 +22,7 @@ public:
 	}
 
 	Playlist()
-		: CoreEntity(),
+		: CoreEntity(ENTRY_TYPE_PLAYLIST),
 		duration(0),
 		songcount(0),
 		isPublic(FALSE)

@@ -74,40 +74,58 @@ LRESULT CSubsonicUi::OnContextMenu(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL
 
 LRESULT CSubsonicUi::OnLButtonDblClick(UINT, WPARAM, LPARAM, BOOL&) {
 	HTREEITEM selected = GetSelectedItem();
-	if ((selected != NULL) && !ItemHasChildren(selected)) { // title selected
+	if ((selected != NULL)) {
+		DWORD_PTR ptr = GetItemData(selected);
+		CoreEntity* coreType = reinterpret_cast<CoreEntity*>(ptr);
+		if (coreType->get_type() == ENTRY_TYPE_TRACK) {
+			
 
- 		DWORD_PTR track_ptr = GetItemData(selected);
+			if (ptr != NULL) {
+				Track* track = reinterpret_cast<Track*>(ptr);
 
-		if (track_ptr != NULL) {
-			Track* track = reinterpret_cast<Track*>(track_ptr);
+				console::formatter() << "Got Track=" << track->get_title() << ", Artist=" << track->get_artist();
 
-			console::formatter() << "Got Track=" << track->get_title() << ", Artist=" << track->get_artist();
+				const char* url = track->get_streamUrl().c_str();
 
-			const char* url = track->get_streamUrl().c_str();
+				static_api_ptr_t<playlist_incoming_item_filter_v2>()->process_locations_async(
+					pfc::list_single_ref_t<const char*>(url),
+					playlist_incoming_item_filter_v2::op_flag_background,
+					NULL,
+					NULL,
+					m_hWnd,
+					p_notify
+					);
+			}
 
-			//TODO: Add title to playlist
-			// static_api_ptr_t<playlist_manager> pm;
-			 
-			// t_size playlist = pm->get_active_playlist();
+		}
+		else if (coreType->get_type() == ENTRY_TYPE_ALBUM) {
 
-//			pm->playlist_add_items(playlist, pfc::list_single_ref_t<metadb_handle_ptr>(trkptr), bit_array_true());
+			if (ptr != NULL) {
+				Album* album = reinterpret_cast<Album*>(ptr);
 
-//			pm->playlist_undo_backup(playlist);
-//			pm->playlist_add_locations(playlist, pfc::list_single_ref_t<const char*>(url), TRUE, m_hWnd);
+				console::formatter() << "Got Album=" << album->get_title() << ", Artist=" << album->get_artist();
 
-			static_api_ptr_t<playlist_incoming_item_filter_v2>()->process_locations_async(
-				pfc::list_single_ref_t<const char*>(url),
-				playlist_incoming_item_filter_v2::op_flag_background,
-				NULL,
-				NULL,
-				m_hWnd,
-				p_notify
-				);
-			/*				*/
+				std::list<Track>* trackList = album->getTracks();
+
+				std::list<Track>::iterator trackIterator;
+				pfc::list_t<const char*> data;
+				for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
+					data.add_item(trackIterator->get_streamUrl());
+				}
+
+				static_api_ptr_t<playlist_incoming_item_filter_v2>()->process_locations_async(
+					data,
+					playlist_incoming_item_filter_v2::op_flag_background,
+					NULL,
+					NULL,
+					m_hWnd,
+					p_notify
+					);
+			}
 		}
 
 	}
-	// TODO: Allow album/artist selection to add complete album/all title of artist
+	
 	return 0;
 }
 
@@ -215,6 +233,9 @@ void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 
 				std::list<Track>* trackList = it->getTracks();
 				addTracksToAlbum(trackList, albumNode, true);
+
+				Album* store = &*it;
+				SetItemData(albumNode, (DWORD_PTR)store); // attach album details
 			}
 		}
 
@@ -224,6 +245,9 @@ void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 			
 			std::list<Track>* trackList = it->getTracks();
 			addTracksToAlbum(trackList, albumNode, true);
+
+			Album* store = &*it;
+			SetItemData(albumNode, (DWORD_PTR)store); // attach album details
 		}
 	}
 
@@ -263,11 +287,8 @@ LRESULT CSubsonicUi::OnContextCatalogUpdateDone(UINT, WPARAM, LPARAM, BOOL&) {
 }
 
 LRESULT CSubsonicUi::OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL &)
-{
-	
+{	
 	std::list<Playlist>* playlists = XmlCacheDb::getInstance()->getAllPlaylists();
-
-	// TODO: save playlists in cache
 
 	populateTreeWithPlaylists(playlists);
 

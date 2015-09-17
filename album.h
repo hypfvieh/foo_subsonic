@@ -33,7 +33,7 @@ public:
 
 
 	Album() :
-		CoreEntity(),
+		CoreEntity(ENTRY_TYPE_ALBUM),
 		songCount(0),
 		duration(0)		
 		{};

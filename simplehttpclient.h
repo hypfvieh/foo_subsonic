@@ -186,13 +186,32 @@ public:
 
 		workstr_lower = workstr_lower.replace("http://", ""); // remove http://
 		workstr_lower = workstr_lower.replace("https://", ""); // or remove https://
+
 		int position = workstr_lower.indexOf('/'); // find first slash, which means host name part has ended
 
+		if (position <= 0) { // no slash in URL
+			position = workstr_lower.length();
+		}
+
 		if (position > 0) {
-			pfc::string hostpart = workstr_lower.subString(0, position);
+			pfc::string hostpartWithPort = workstr_lower.subString(0, position); // host and potentially the port
+			pfc::string hostpart = hostpartWithPort; // default is no port in url
+
+			if (hostpartWithPort.contains(':')) { // we have a port!
+				int portpos = hostpartWithPort.indexOf(':'); // port begin behind the colon
+				hostpart = hostpartWithPort.subString(0, portpos); // only the host
+				pfc::string port = hostpartWithPort.subString(portpos + 1, hostpartWithPort.length()); // only the port (+1 to remove the colon)
+
+				int iport = std::stol(port.c_str());
+				if (port <= 65535 && port > 0) { // port is numeric and is in range (port_max = 65535, port_min = 1)
+					simpleUrl->httpPort = iport;
+				}
+				else { // if port not in range, we ignore it
+					console::formatter() << "The specified port '" << port.c_str() << "' is either not numeric or out of range (1-65535)";
+				}
+			}
 
 			pfc::stringcvt::string_os_from_utf8 hostpart_wide(hostpart.c_str());
-
 
 			simpleUrl->setHttpHost(hostpart_wide);
 

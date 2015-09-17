@@ -11,12 +11,6 @@ namespace Preferences {
 	const GUID guid_password_data = { 0x3c3a9af4, 0xd496, 0x49da,{ 0xb6, 0xc, 0xe7, 0xa, 0x97, 0xd5, 0xde, 0x16 } };
 	cfg_string password_data(guid_password_data, "");
 
-	const GUID guid_check_customport_data = { 0x328b167f, 0xbf05, 0x4042,{ 0xaa, 0x2f, 0xa, 0xb4, 0x2a, 0x42, 0x5a, 0xea } };
-	cfg_bool check_customport_data(guid_check_customport_data, FALSE);
-
-	const GUID guid_customport_data = { 0xa3ca2430, 0xcecf, 0x4f30,{ 0x81, 0x73, 0x89, 0xd0, 0x79, 0xf0, 0x68, 0x52 } };
-	cfg_string customport_data(guid_customport_data, "");
-
 	const GUID guid_check_selfsignedcerts_data = { 0x141b2ec3, 0x6b59, 0x49b3,{ 0xb7, 0xd7, 0x52, 0xcf, 0xb3, 0x8d, 0xe2, 0xc } };
 	cfg_bool check_selfsignedcerts_data(guid_check_selfsignedcerts_data, FALSE);
 
@@ -47,8 +41,6 @@ private:
 	CEdit connect_url;
 	CEdit username;
 	CEdit password;
-	CEdit customport;
-	CCheckBox use_customport;
 	CCheckBox use_selfsignedcerts;
 
 	CEdit proxy_url;
@@ -70,9 +62,7 @@ public:
 		MSG_WM_INITDIALOG(OnInitDialog)
 		COMMAND_HANDLER_EX(IDC_CONNECT_URL_DATA, EN_UPDATE, OnChanged)
 		COMMAND_HANDLER_EX(IDC_USERNAME_DATA, EN_UPDATE, OnChanged)
-		COMMAND_HANDLER_EX(IDC_PASSWORD_DATA, EN_UPDATE, OnChanged)
-		COMMAND_HANDLER_EX(IDC_CUSTOMPORT_DATA, EN_UPDATE, OnChanged)
-		COMMAND_HANDLER_EX(IDC_CHECK_CUSTOMPORT, BN_CLICKED, OnChanged)
+		COMMAND_HANDLER_EX(IDC_PASSWORD_DATA, EN_UPDATE, OnChanged)		
 		COMMAND_HANDLER_EX(IDC_CHECK_SELFSIGNED, BN_CLICKED, OnChanged)
 		COMMAND_HANDLER_EX(IDC_RADIO_PROXY_CUSTOM, BN_CLICKED, OnChanged)
 		COMMAND_HANDLER_EX(IDC_RADIO_PROXY_SYSTEM, BN_CLICKED, OnChanged)
@@ -86,9 +76,7 @@ public:
 		connect_url = GetDlgItem(IDC_CONNECT_URL_DATA);
 		username = GetDlgItem(IDC_USERNAME_DATA);
 		password = GetDlgItem(IDC_PASSWORD_DATA);
-		customport = GetDlgItem(IDC_CUSTOMPORT_DATA);
 
-		use_customport = GetDlgItem(IDC_CHECK_CUSTOMPORT);
 		use_selfsignedcerts = GetDlgItem(IDC_CHECK_SELFSIGNED);
 
 		proxy_url = GetDlgItem(IDC_PROXY_HOSTNAME_DATA);
@@ -114,7 +102,6 @@ public:
 		CheckDlgButton(IDC_RADIO_PROXY_CUSTOM, Preferences::proxy_settings_custom_data);
 
 		CheckDlgButton(IDC_CHECK_SELFSIGNED, Preferences::check_selfsignedcerts_data);
-		CheckDlgButton(IDC_CHECK_CUSTOMPORT, Preferences::check_customport_data);
 
 		return 0;
 	}
@@ -135,9 +122,6 @@ public:
 		uGetWindowText(password, temp);
 		if (Preferences::password_data != temp) return true;
 
-		uGetWindowText(customport, temp);
-		if (Preferences::customport_data != temp) return true;
-
 		uGetWindowText(connect_timeout, temp);
 		int tInt = atoi(temp.c_str());
 		if (Preferences::connect_timeout_data != tInt) return true;
@@ -145,9 +129,6 @@ public:
 		bool data;
 		
 		//CheckDlgButton(IDC_CHECK_CUSTOMPORT, 0);
-
-		data = IsDlgButtonChecked(IDC_CHECK_CUSTOMPORT) == BST_CHECKED;
-		if (Preferences::check_customport_data != data) return true;
 
 		data = IsDlgButtonChecked(IDC_CHECK_SELFSIGNED) == BST_CHECKED;
 		if (Preferences::check_selfsignedcerts_data != data) return true;
@@ -181,7 +162,6 @@ public:
 		uGetWindowText(connect_url, Preferences::connect_url_data);
 		uGetWindowText(username, Preferences::username_data);
 		uGetWindowText(password, Preferences::password_data);
-		uGetWindowText(customport, Preferences::customport_data);
 
 		uGetWindowText(proxy_url, Preferences::proxy_url_data);
 
@@ -190,7 +170,6 @@ public:
 		Preferences::connect_timeout_data = atoi(foo.c_str());
 		
 		//Preferences::check_customport_data = GetDlgItemInt(IDC_CHECK_CUSTOMPORT, NULL, FALSE);
-		Preferences::check_customport_data = IsDlgButtonChecked(IDC_CHECK_CUSTOMPORT) == BST_CHECKED;
 		Preferences::check_selfsignedcerts_data = IsDlgButtonChecked(IDC_CHECK_SELFSIGNED) == BST_CHECKED;
 
 		Preferences::proxy_settings_no_data = IsDlgButtonChecked(IDC_RADIO_PROXY_NO) == BST_CHECKED;
@@ -206,7 +185,6 @@ public:
 		uSetWindowText(connect_url, "");
 		uSetWindowText(username, "");
 		uSetWindowText(password, "");
-		uSetWindowText(customport, "");
 
 		uSetWindowText(proxy_url, "");
 		uSetWindowText(connect_timeout, "10");

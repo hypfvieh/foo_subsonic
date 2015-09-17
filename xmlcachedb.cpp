@@ -1,6 +1,7 @@
 #include "foo_subsonic.h"
 #include "xmlcachedb.h"
 #include "xmlhelper.h"
+#include <regex>
 
 using namespace XmlHelper;
 
@@ -76,21 +77,7 @@ void XmlCacheDb::saveAlbums() {
 		std::list<Track>* trackList = it->getTracks();
 		std::list<Track>::iterator trackIterator;
 		for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
-			TiXmlElement* track = new TiXmlElement("Track");
-			/*
-			track->SetAttribute("id", trackIterator->get_id().c_str());
-			track->SetAttribute("title", trackIterator->get_title().c_str());
-			track->SetAttribute("duration", trackIterator->get_duration());
-			track->SetAttribute("bitRate", trackIterator->get_bitrate());
-			track->SetAttribute("contentType", trackIterator->get_contentType().c_str());
-			track->SetAttribute("coverArt", trackIterator->get_coverArt().c_str());
-			track->SetAttribute("genre", trackIterator->get_genre().c_str());
-			track->SetAttribute("parent", trackIterator->get_parentId());
-			track->SetAttribute("suffix", trackIterator->get_suffix().c_str());
-			track->SetAttribute("track", trackIterator->get_tracknumber());
-			track->SetAttribute("year", trackIterator->get_year().c_str());
-			track->SetAttribute("size", trackIterator->get_size());
-			*/
+			TiXmlElement* track = new TiXmlElement("Track");			
 			Track* t = &*trackIterator;
 
 			setTrackInfo(track, t);
@@ -211,4 +198,53 @@ void XmlCacheDb::getAllPlaylistsFromCache() {
 std::list<Playlist>* XmlCacheDb::getAllPlaylists() {
 	savePlaylists();
 	return &playlists;
+}
+
+bool XmlCacheDb::getTrackDetailsByUrl(const char* url, Track* t) {
+
+	std::string strUrl = url;
+	std::string result;
+	if (t == nullptr) {
+		return FALSE;
+	}	
+
+	std::regex re(".*id=([^&]+).*");
+	std::smatch match;
+	if (std::regex_search(strUrl, match, re) && match.size() > 1) { // found ID
+		result = match.str(1);
+	}
+	else { // no ID, cannot continue
+		return FALSE;
+	}
+
+	std::list<Album>::iterator it;
+	for (it = albumlist.begin(); it != albumlist.end(); it++) {
+		std::list<Track>* trackList = it->getTracks();
+		std::list<Track>::iterator trackIterator;
+		for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
+
+			console::formatter() << "Comparing: T->ID: '" << trackIterator->get_id() << "' --- Given ID: '" << result.c_str() << "'";
+
+			if (strcmp(trackIterator->get_id().c_str(), result.c_str()) == 0) {
+				t->set_album(trackIterator->get_album());
+				t->set_artist(trackIterator->get_artist());
+				t->set_artistId(trackIterator->get_artistId());
+				t->set_bitrate(trackIterator->get_bitrate());
+				t->set_contentType(trackIterator->get_contentType());
+				t->set_coverArt(trackIterator->get_coverArt());
+				t->set_duration(trackIterator->get_duration());
+				t->set_genre(trackIterator->get_genre());
+				t->set_id(trackIterator->get_id());
+				t->set_size(trackIterator->get_size());
+				t->set_streamUrl(trackIterator->get_streamUrl());
+				t->set_suffix(trackIterator->get_suffix());
+				t->set_title(trackIterator->get_title());
+				t->set_tracknumber(trackIterator->get_tracknumber());
+				t->set_year(trackIterator->get_year());
+				t->set_parentId(trackIterator->get_parentId());
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
 }

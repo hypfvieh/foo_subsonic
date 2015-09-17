@@ -33,9 +33,6 @@
     <ClCompile Include="subsoniclibraryscanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stream_decoder.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="albumQueryThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -80,9 +77,6 @@
     <ClInclude Include="subsoniclibraryscanner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="simplehttpclient.cpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="simplehttpclient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -102,9 +96,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="playlistupdater.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MSelectTree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

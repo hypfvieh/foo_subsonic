@@ -277,6 +277,8 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 	int size = 2; // SUBSONIC_MAX_ALBUMLIST_SIZE
 	int offset = 0;
 
+	XmlCacheDb::getInstance()->getAllAlbums()->clear(); // remove old entries first
+
 	getAlbumList(p_status, XmlCacheDb::getInstance()->getAllAlbums(), size, offset);
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
@@ -294,6 +296,7 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 	Tries to retrieve all playlists stored for the current user (or being public).
 */
 void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window, threaded_process_status &p_status) {
+	XmlCacheDb::getInstance()->getAllPlaylists()->clear(); // remove old entries
 	getPlaylists(p_status, XmlCacheDb::getInstance()->getAllPlaylists());
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call

@@ -22,7 +22,7 @@ class Track : public CoreEntity {
 
 public:
 	Track()
-		: CoreEntity(),
+		: CoreEntity(ENTRY_TYPE_TRACK),
 		duration(0),
 		bitrate(0),
 		size(0),

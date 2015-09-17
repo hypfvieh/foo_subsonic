@@ -10,13 +10,6 @@ namespace Preferences {
 	extern const GUID guid_password_data;
 	extern cfg_string password_data;
 
-
-	extern const GUID guid_check_customport_data;
-	extern cfg_bool check_customport_data;
-
-	extern const GUID guid_customport_data;
-	extern cfg_string customport_data;
-
 	extern const GUID guid_check_selfsignedcerts_data;
 	extern cfg_bool check_selfsignedcerts_data;
 
