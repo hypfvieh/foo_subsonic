@@ -74,10 +74,12 @@ LRESULT CSubsonicUi::OnContextMenu(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL
 
 LRESULT CSubsonicUi::OnLButtonDblClick(UINT, WPARAM, LPARAM, BOOL&) {
 	HTREEITEM selected = GetSelectedItem();
+
 	if ((selected != NULL)) {
 		DWORD_PTR ptr = GetItemData(selected);
 		CoreEntity* coreType = reinterpret_cast<CoreEntity*>(ptr);
-		if (coreType->get_type() == ENTRY_TYPE_TRACK) {
+
+		if (coreType->get_type() == ENTRY_TYPE_TRACK) { // Track
 			
 
 			if (ptr != NULL) {
@@ -98,32 +100,41 @@ LRESULT CSubsonicUi::OnLButtonDblClick(UINT, WPARAM, LPARAM, BOOL&) {
 			}
 
 		}
-		else if (coreType->get_type() == ENTRY_TYPE_ALBUM) {
-
+		else { // Album or Playlist
 			if (ptr != NULL) {
-				Album* album = reinterpret_cast<Album*>(ptr);
+				std::list<Track>* trackList;
+				if (coreType->get_type() == ENTRY_TYPE_ALBUM) {
+					Album* album = reinterpret_cast<Album*>(ptr);
 
-				console::formatter() << "Got Album=" << album->get_title() << ", Artist=" << album->get_artist();
+					console::formatter() << "Got Album=" << album->get_title() << ", Artist=" << album->get_artist();
 
-				std::list<Track>* trackList = album->getTracks();
+					trackList = album->getTracks();
 
-				std::list<Track>::iterator trackIterator;
-				pfc::list_t<const char*> data;
-				for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
-					data.add_item(trackIterator->get_streamUrl());
+				}
+				else if (coreType->get_type() == ENTRY_TYPE_PLAYLIST) {
+					Playlist* playlist = reinterpret_cast<Playlist*>(ptr);
+					console::formatter() << "Got Playlist=" << playlist->get_name() << ", Entries=" << playlist->getTracks()->size();
+					trackList = playlist->getTracks();
 				}
 
-				static_api_ptr_t<playlist_incoming_item_filter_v2>()->process_locations_async(
-					data,
-					playlist_incoming_item_filter_v2::op_flag_background,
-					NULL,
-					NULL,
-					m_hWnd,
-					p_notify
-					);
+				if (trackList->size() > 0) {
+					std::list<Track>::iterator trackIterator;
+					pfc::list_t<const char*> data;
+					for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
+						data.add_item(trackIterator->get_streamUrl());
+					}
+
+					static_api_ptr_t<playlist_incoming_item_filter_v2>()->process_locations_async(
+						data,
+						playlist_incoming_item_filter_v2::op_flag_background,
+						NULL,
+						NULL,
+						m_hWnd,
+						p_notify
+						);
+				}
 			}
 		}
-
 	}
 	
 	return 0;
@@ -159,7 +170,7 @@ HTREEITEM CSubsonicUi::getRootTreeNodeForArtist(wchar_t bgnLetter) {
 	return catalogRootNodes[0]; // should match for everything which is not beginning with a letter
 }
 
-void CSubsonicUi::addTracksToAlbum(std::list<Track>* trackList, HTREEITEM albumNode, bool withTrackNumber) {
+void CSubsonicUi::addTracksToTreeNode(std::list<Track>* trackList, HTREEITEM albumNode, bool withTrackNumber) {
 	//std::list<Track>* trackList = it->getTracks();
 	std::list<Track>::iterator trackIterator;
 	for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
@@ -232,7 +243,7 @@ void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 				HTREEITEM albumNode = InsertItem(albumName, artistNode, TVI_LAST);
 
 				std::list<Track>* trackList = it->getTracks();
-				addTracksToAlbum(trackList, albumNode, true);
+				addTracksToTreeNode(trackList, albumNode, true);
 
 				Album* store = &*it;
 				SetItemData(albumNode, (DWORD_PTR)store); // attach album details
@@ -244,7 +255,7 @@ void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 			HTREEITEM albumNode = InsertItem(albumName, artistRoot, TVI_LAST); // add the current album as entry to artist
 			
 			std::list<Track>* trackList = it->getTracks();
-			addTracksToAlbum(trackList, albumNode, true);
+			addTracksToTreeNode(trackList, albumNode, true);
 
 			Album* store = &*it;
 			SetItemData(albumNode, (DWORD_PTR)store); // attach album details
@@ -269,9 +280,9 @@ void CSubsonicUi::populateTreeWithPlaylists(std::list<Playlist>* playlists) {
 		HTREEITEM rootNode = rootNodes[TREE_ROOT_PLAYLISTS];
 		
 		
-		HTREEITEM albumNode = InsertItem(playlistName, rootNode, TVI_LAST); // add the current album as entry to artist
+		HTREEITEM playlistNode = InsertItem(playlistName, rootNode, TVI_LAST); // add the current album as entry to artist
 		std::list<Track>* tracks = it->getTracks();
-		addTracksToAlbum(tracks, albumNode, false);		
+		addTracksToTreeNode(tracks, playlistNode, false);
 	}
 
 	// Redraw
