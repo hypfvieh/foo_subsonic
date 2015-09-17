@@ -66,7 +66,6 @@ namespace foo_subsonic {
 
 		void populateTreeWithAlbums(std::list<Album>* albumList);
 		void populateTreeWithPlaylists(std::list<Playlist>* playlists);
-		void createRootTree(bool loadCachedAlbums, bool loadCachedPlaylists);
 
 		HWND get_wnd() { return *this; }
 		void set_configuration(ui_element_config::ptr config) { m_config = config; }
@@ -86,7 +85,7 @@ namespace foo_subsonic {
 		bool m_dragging;
 		CImageList *m_dragImage;
 		SubsonicLibraryScanner scanner;
-		HTREEITEM rootNodes[2];
+		HTREEITEM rootNodes[2] = {NULL, NULL};
 		HTREEITEM catalogRootNodes[28];
 		HTREEITEM getRootTreeNodeForArtist(wchar_t bgnLetter);
 

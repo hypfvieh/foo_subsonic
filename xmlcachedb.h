@@ -26,9 +26,6 @@ private:
 	void getAllAlbumsFromCache();
 	void getAllPlaylistsFromCache();
 
-	void saveAlbums();
-	void savePlaylists();
-
 public:
 	static XmlCacheDb* getInstance() {
 		if (instance == NULL) {
@@ -39,6 +36,9 @@ public:
 	
 	std::list<Album>* getAllAlbums();
 	std::list<Playlist>* getAllPlaylists();
+
+	void saveAlbums();
+	void savePlaylists();
 
 	bool getTrackDetailsByUrl(const char* url, Track* t);
 };

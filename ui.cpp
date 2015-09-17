@@ -27,7 +27,10 @@ LRESULT CSubsonicUi::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*b
 	CTreeViewCtrlEx::ModifyStyle(1, TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS);
 	//CTreeViewCtrlEx::SetExtendedStyle()
 
-	createRootTree(true, true);
+	// Read cached album catalog
+	SendMessage(m_hWnd, ID_CONTEXT_UPDATECATALOG_DONE, HIWORD(0), LOWORD(0));
+	// Read cached playlist
+	SendMessage(m_hWnd, ID_CONTEXT_UPDATEPLAYLIST_DONE, HIWORD(0), LOWORD(0));
 
 	return lRet;
 }
@@ -190,32 +193,18 @@ void CSubsonicUi::addTracksToTreeNode(std::list<Track>* trackList, HTREEITEM alb
 
 }
 
-void CSubsonicUi::createRootTree(bool loadCachedAlbums, bool loadCachedPlaylists) {
-	rootNodes[TREE_ROOT_CATALOG]   = CTreeViewCtrlEx::InsertItem(L"Remote Catalog", NULL, TVI_ROOT);
-	rootNodes[TREE_ROOT_PLAYLISTS] = CTreeViewCtrlEx::InsertItem(L"Remote Playlists", NULL, TVI_ROOT);
+void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
+	std::list<Album>::iterator it;
 
+	if (rootNodes[TREE_ROOT_CATALOG] != NULL) {
+		CTreeViewCtrlEx::DeleteItem(rootNodes[TREE_ROOT_CATALOG]);  // remove old catalog node and all childs
+	}
+	rootNodes[TREE_ROOT_CATALOG] = CTreeViewCtrlEx::InsertItem(L"Remote Catalog", NULL, TVI_ROOT); // create new catalog node
 	std::wstring alpha = _T("#ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	for (unsigned int i = 0; i < alpha.length(); i++) {
 		wchar_t name[2] = { alpha[i] ,'\0' };
 		catalogRootNodes[i] = CTreeViewCtrlEx::InsertItem(name, rootNodes[TREE_ROOT_CATALOG], TVI_LAST);
 	}
-
-	CTreeViewCtrlEx::Expand(rootNodes[TREE_ROOT_CATALOG]);
-
-	if (loadCachedAlbums) {
-		populateTreeWithAlbums(XmlCacheDb::getInstance()->getAllAlbums());
-	}
-	if (loadCachedPlaylists) {
-
-	}
-
-}
-
-void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
-	std::list<Album>::iterator it;
-
-	CTreeViewCtrlEx::DeleteAllItems(); // remove current content
-	createRootTree(false, true); // recreate the root tree, remove cached albums but retain the playlists
 
 	for (it = albumList->begin(); it != albumList->end(); it++) {
 		//pfc::stringcvt::string_os_from_utf8 albumname(albumList[i]->get_title());
@@ -261,16 +250,16 @@ void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 			SetItemData(albumNode, (DWORD_PTR)store); // attach album details
 		}
 	}
-
-	// Redraw
-	CTreeViewCtrlEx::Invalidate();
+	CTreeViewCtrlEx::Expand(rootNodes[TREE_ROOT_CATALOG]);
 }
 
 void CSubsonicUi::populateTreeWithPlaylists(std::list<Playlist>* playlists) {
 	std::list<Playlist>::iterator it;
 
-	CTreeViewCtrlEx::DeleteAllItems(); // remove current content
-	createRootTree(true, false); // recreate the root tree, remove cached albums but retain the playlists
+	if (rootNodes[TREE_ROOT_PLAYLISTS] != NULL) {
+		CTreeViewCtrlEx::DeleteItem(rootNodes[TREE_ROOT_PLAYLISTS]);  // remove old playlists node and all childs
+	}
+	rootNodes[TREE_ROOT_PLAYLISTS] = CTreeViewCtrlEx::InsertItem(L"Remote Playlists", NULL, TVI_ROOT); // create playlist node
 
 	for (it = playlists->begin(); it != playlists->end(); it++) {
 		//pfc::stringcvt::string_os_from_utf8 albumname(albumList[i]->get_title());
@@ -285,23 +274,17 @@ void CSubsonicUi::populateTreeWithPlaylists(std::list<Playlist>* playlists) {
 		addTracksToTreeNode(tracks, playlistNode, false);
 	}
 
-	// Redraw
-	CTreeViewCtrlEx::Invalidate();
 }
 
 LRESULT CSubsonicUi::OnContextCatalogUpdateDone(UINT, WPARAM, LPARAM, BOOL&) {
-	std::list<Album>* albumList = XmlCacheDb::getInstance()->getAllAlbums();
-
-	populateTreeWithAlbums(albumList);
+	populateTreeWithAlbums(XmlCacheDb::getInstance()->getAllAlbums());
 
 	return 0;
 }
 
 LRESULT CSubsonicUi::OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL &)
 {	
-	std::list<Playlist>* playlists = XmlCacheDb::getInstance()->getAllPlaylists();
-
-	populateTreeWithPlaylists(playlists);
+	populateTreeWithPlaylists(XmlCacheDb::getInstance()->getAllPlaylists());
 
 	return 0;
 }

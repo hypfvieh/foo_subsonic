@@ -10,7 +10,7 @@ XmlCacheDb* XmlCacheDb::instance = NULL;
 XmlCacheDb::XmlCacheDb() {
 	internalDoc = TiXmlDocument("foo_subsonic_cache.xml");
 	if (!internalDoc.LoadFile()) {
-		console::print("Offline cache no found, creating new");
+		console::print("Offline cache not found, creating new");
 	}
 	else {
 		getAllAlbumsFromCache();
@@ -120,7 +120,6 @@ void XmlCacheDb::getAllAlbumsFromCache() {
 }
 
 std::list<Album>* XmlCacheDb::getAllAlbums() {
-	saveAlbums();
 	return &albumlist;
 }
 
@@ -196,7 +195,6 @@ void XmlCacheDb::getAllPlaylistsFromCache() {
 }
 
 std::list<Playlist>* XmlCacheDb::getAllPlaylists() {
-	savePlaylists();
 	return &playlists;
 }
 

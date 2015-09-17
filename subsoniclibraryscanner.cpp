@@ -274,7 +274,7 @@ void SubsonicLibraryScanner::parsingError(const char* message, const char* errCo
 void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_status &p_status) {
 	
 	// TODO: increase after debug (max is 500)
-	int size = 2; // SUBSONIC_MAX_ALBUMLIST_SIZE
+	int size = 2;//SUBSONIC_MAX_ALBUMLIST_SIZE;
 	int offset = 0;
 
 	XmlCacheDb::getInstance()->getAllAlbums()->clear(); // remove old entries first
@@ -282,6 +282,9 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 	getAlbumList(p_status, XmlCacheDb::getInstance()->getAllAlbums(), size, offset);
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
+
+	// save our new results
+	XmlCacheDb::getInstance()->saveAlbums();
 
 	// signal the main window that the thread has done fetching
 	SendMessage(window, ID_CONTEXT_UPDATECATALOG_DONE, HIWORD(0), LOWORD(0));
@@ -300,6 +303,9 @@ void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window, threaded_process_
 	getPlaylists(p_status, XmlCacheDb::getInstance()->getAllPlaylists());
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
+
+	// save our new results
+	XmlCacheDb::getInstance()->savePlaylists();
 
 	// signal the main window that the thread has done fetching
 	SendMessage(window, ID_CONTEXT_UPDATEPLAYLIST_DONE, HIWORD(0), LOWORD(0));

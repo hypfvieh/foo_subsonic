@@ -13,6 +13,9 @@ namespace Preferences {
 	extern const GUID guid_check_selfsignedcerts_data;
 	extern cfg_bool check_selfsignedcerts_data;
 
+	extern const GUID guid_check_pass_as_hex_data;
+	extern cfg_bool check_pass_as_hex_data;
+
 	// Proxy Stuff
 	extern const GUID guid_proxy_url_data;
 	extern cfg_string proxy_url_data;
