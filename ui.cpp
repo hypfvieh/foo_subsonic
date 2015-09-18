@@ -88,7 +88,7 @@ LRESULT CSubsonicUi::OnLButtonDblClick(UINT, WPARAM, LPARAM, BOOL&) {
 			if (ptr != NULL) {
 				Track* track = reinterpret_cast<Track*>(ptr);
 
-				console::formatter() << "Got Track=" << track->get_title() << ", Artist=" << track->get_artist();
+				uDebugLog() << "Got Track=" << track->get_title() << ", Artist=" << track->get_artist();
 
 				const char* url = track->get_streamUrl().c_str();
 

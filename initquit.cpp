@@ -1,5 +1,6 @@
 #include "foo_subsonic.h"
 #include "xmlcachedb.h"
+#include "album_art.h"
 
 // Sample initquit implementation. See also: initquit class documentation in relevant header.
 

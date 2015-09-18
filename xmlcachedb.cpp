@@ -221,7 +221,7 @@ bool XmlCacheDb::getTrackDetailsByUrl(const char* url, Track* t) {
 		std::list<Track>::iterator trackIterator;
 		for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
 
-			console::formatter() << "Comparing: T->ID: '" << trackIterator->get_id() << "' --- Given ID: '" << result.c_str() << "'";
+			uDebugLog() << "Comparing: T->ID: '" << trackIterator->get_id() << "' --- Given ID: '" << result.c_str() << "'";
 
 			if (strcmp(trackIterator->get_id().c_str(), result.c_str()) == 0) {
 				t->set_album(trackIterator->get_album());

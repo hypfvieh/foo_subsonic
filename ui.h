@@ -105,4 +105,4 @@ namespace foo_subsonic {
 
 	static service_factory_single_t<ui_element_myimpl> g_ui_element_myimpl_factory;
 
-}
+} // namespace

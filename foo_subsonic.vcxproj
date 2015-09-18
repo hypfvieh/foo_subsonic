@@ -114,6 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="album.h" />
+    <ClInclude Include="album_art.h" />
     <ClInclude Include="CoreEntity.h" />
     <ClInclude Include="foo_subsonic.h" />
     <ClInclude Include="meta.h" />
