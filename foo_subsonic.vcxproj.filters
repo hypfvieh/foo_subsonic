@@ -113,6 +113,9 @@
     <ClInclude Include="ListviewHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CColorEdit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="readme.txt" />

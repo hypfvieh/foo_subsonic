@@ -23,6 +23,7 @@ LRESULT CSubsonicUi::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*b
 
 	CTreeViewCtrlEx::SetTextColor(m_callback->query_std_color(ui_color_text));
 	CTreeViewCtrlEx::SetBkColor(m_callback->query_std_color(ui_color_background));
+	
 
 	// show +/- and the connecting lines
 	CTreeViewCtrlEx::ModifyStyle(1, TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS);
@@ -166,7 +167,8 @@ LRESULT CSubsonicUi::OnContextPlaylistUpdate(WORD /*wNotifyCode*/, WORD /*wID*/,
 }
 
 LRESULT CSubsonicUi::OnSearchDialogShow(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
-	new SearchDialog();	
+
+	new SearchDialog(m_callback->query_std_color(ui_color_text), m_callback->query_std_color(ui_color_background));
 
 	return 0;
 }

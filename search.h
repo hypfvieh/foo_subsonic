@@ -5,6 +5,7 @@
 #include "searchQueryThread.h"
 #include "xmlhelper.h"
 #include "ListviewHelper.h"
+#include "CColorEdit.h"
 
 
 class SearchDialog : public CDialogImpl<SearchDialog> {
@@ -16,6 +17,9 @@ private:
 
 	foo_subsonic::SubsonicLibraryScanner scanner;
 
+	COLORREF bgColor;
+	COLORREF fgColor;
+
 public:
 	enum { IDD = IDD_SEARCH };
 
@@ -25,28 +29,28 @@ public:
 		COMMAND_ID_HANDLER_EX(IDOK, OnOk)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
 		MESSAGE_HANDLER(ID_SEARCH_DONE, OnSearchDone)
-		//MESSAGE_HANDLER(WM_LBUTTONDBLCLK, OnLButtonDblClick);
-		COMMAND_HANDLER_EX(IDC_SEARCHTERM, EN_UPDATE, OnSearchTermChanged)
-		COMMAND_HANDLER_EX(IDC_CBSEARCHAREA, EN_UPDATE, OnSearchTermChanged)
 		NOTIFY_HANDLER(IDC_RESULTLIST, NM_DBLCLK, OnLButtonDblClick)
 	END_MSG_MAP()
 
 	enum columns {
 		artist_column,
-		album_column,
 		track_column,
+		album_column,		
 		duration_column
 	};
 
-	SearchDialog() {
+	SearchDialog(COLORREF fgcolor, COLORREF bgcolor) {
 		m_haccelerator = NULL;
+		fgColor = fgcolor;
+		bgColor = bgcolor;
 		Create(core_api::get_main_window());
 	}
 
+	
 	bool OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
 		static_api_ptr_t<modeless_dialog_manager>()->add(m_hWnd);
 
-		search_term = (GetDlgItem(IDC_SEARCHTERM));
+		search_term.Attach(GetDlgItem(IDC_SEARCHTERM));
 		find_button = GetDlgItem(IDOK);
 		results.Attach(GetDlgItem(IDC_RESULTLIST));
 
@@ -59,6 +63,12 @@ public:
 		listviewHelper::insert_column(results, album_column, "Album", 110);
 		listviewHelper::insert_column(results, duration_column, "Duration", 50);
 
+		results.SetBkColor(bgColor);
+		results.SetTextColor(fgColor);
+		results.SetTextBkColor(bgColor);
+		
+		search_term.SetFocus();
+		
 		return true;
 	}
 
@@ -71,11 +81,7 @@ public:
 		DestroyWindow();
 	}
 
-	void OnSearchTermChanged(UINT uNotifyCode, int nID, CWindow wndCtl) {
-		uDebugLog() << "Update..." << nID << " " << uNotifyCode;
-
-	}
-
+	
 	void OnOk(UINT uNotifyCode, int nID, CWindow wndCtl) {
 		if (nID == IDOK) {
 			uDebugLog() << "search enter";
