@@ -107,6 +107,7 @@
     <ClCompile Include="playlistQueryThread.cpp" />
     <ClCompile Include="preferences.cpp" />
     <ClCompile Include="albumQueryThread.cpp" />
+    <ClCompile Include="searchQueryThread.cpp" />
     <ClCompile Include="subsoniclibraryscanner.cpp" />
     <ClCompile Include="ui.cpp" />
     <ClCompile Include="xmlcachedb.cpp" />
@@ -117,6 +118,7 @@
     <ClInclude Include="album_art.h" />
     <ClInclude Include="CoreEntity.h" />
     <ClInclude Include="foo_subsonic.h" />
+    <ClInclude Include="ListviewHelper.h" />
     <ClInclude Include="meta.h" />
     <ClInclude Include="playlist.h" />
     <ClInclude Include="playlistQueryThread.h" />
@@ -124,6 +126,8 @@
     <ClInclude Include="preferences.h" />
     <ClInclude Include="albumQueryThread.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="search.h" />
+    <ClInclude Include="searchQueryThread.h" />
     <ClInclude Include="simplehttpclient.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="subsoniclibraryscanner.h" />

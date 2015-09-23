@@ -88,7 +88,7 @@ BOOL SubsonicLibraryScanner::connectAndGet(TiXmlDocument* doc, const char* restM
 /*
 	Retrieve @size albums from server starting at @offset.
 */
-void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, std::list<Album>* albumList, int size, int offset) {
+void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int size, int offset) {
 	pfc::string8 urlparms;
 	urlparms = "type=alphabeticalByName&size=";
 	urlparms << size << "&offset=" << offset;
@@ -96,11 +96,6 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, std
 	TiXmlDocument doc;
 	
 	if (!connectAndGet(&doc, "getAlbumList2", urlparms)) { // error occoured, we are done
-		return;
-	}
-
-	if (albumList == nullptr) {
-		console::error("Albumlist should not be null!");
 		return;
 	}
 
@@ -122,7 +117,7 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, std
 
 					getAlbumTracks(&a);
 
-					albumList->push_back(a);
+					XmlCacheDb::getInstance()->addAlbum(a);
 
 					counter++;
 					p_status.set_progress(counter, offset + 1000);
@@ -158,8 +153,9 @@ void SubsonicLibraryScanner::getAlbumTracks(Album *album) {
 			if (!firstChild->NoChildren()) { // list is not empty
 				
 				for (TiXmlElement* e = firstChild->FirstChildElement("song"); e != NULL; e = e->NextSiblingElement("song")) {
-					Track t = Track();					
-					parseTrackInfo(e, &t);
+					Track* t = new Track();					
+					parseTrackInfo(e, t);
+
 					album->addTrack(t);										
 				}
 			}
@@ -170,17 +166,12 @@ void SubsonicLibraryScanner::getAlbumTracks(Album *album) {
 /*
 	Retrieve all playlists from subsonic server.
 */
-void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status, std::list<Playlist>* playlists) {
+void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status) {
 	//TODO: Retrieve playlist
 
 	TiXmlDocument doc;
 
 	if (!connectAndGet(&doc, "getPlaylists", "")) { // error occoured, we are done
-		return;
-	}
-
-	if (playlists == nullptr) {
-		console::error("Playlists should not be null!");
 		return;
 	}
 
@@ -203,7 +194,8 @@ void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status, std
 
 					// retrieve playlist entries
 					getPlaylistEntries(&p);
-					playlists->push_back(p);
+
+					XmlCacheDb::getInstance()->addPlaylist(p);
 				}
 			}
 		}
@@ -231,14 +223,43 @@ void SubsonicLibraryScanner::getPlaylistEntries(Playlist *playlist) {
 			if (!firstChild->NoChildren()) { // list is not empty
 
 				for (TiXmlElement* e = firstChild->FirstChildElement("entry"); e != NULL; e = e->NextSiblingElement("entry")) {
-					Track t = Track();
-					parseTrackInfo(e, &t);
+					Track* t = new Track();
+					parseTrackInfo(e, t);
 					playlist->addTrack(t);
 				}
 			}
 		}
 	}
 }
+
+
+void SubsonicLibraryScanner::getSearchResults(const char* urlParams) {
+
+	pfc::string8 params = "query=";
+	params << urlParams;
+
+	TiXmlDocument doc;
+
+	if (!connectAndGet(&doc, "search2", params)) { // error occoured, we are done
+		return;
+	}
+
+	TiXmlElement* rootNode = doc.FirstChildElement("subsonic-response");
+	if (rootNode) {
+		TiXmlElement* firstChild = rootNode->FirstChildElement("searchResult2");
+		if (firstChild) {
+			if (!firstChild->NoChildren()) { // list is not empty
+
+				for (TiXmlElement* e = firstChild->FirstChildElement("song"); e != NULL; e = e->NextSiblingElement("song")) {
+					Track* t = new Track();
+					parseTrackInfo(e, t);
+					XmlCacheDb::getInstance()->addSearchResult(t);
+				}
+			}
+		}
+	}
+}
+
 
 /*
   Checks if returned Response of Subsonic is an error message.
@@ -279,7 +300,7 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 
 	XmlCacheDb::getInstance()->getAllAlbums()->clear(); // remove old entries first
 
-	getAlbumList(p_status, XmlCacheDb::getInstance()->getAllAlbums(), size, offset);
+	getAlbumList(p_status, size, offset);
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
 
@@ -300,7 +321,7 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 */
 void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window, threaded_process_status &p_status) {
 	XmlCacheDb::getInstance()->getAllPlaylists()->clear(); // remove old entries
-	getPlaylists(p_status, XmlCacheDb::getInstance()->getAllPlaylists());
+	getPlaylists(p_status);
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
 
@@ -309,6 +330,16 @@ void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window, threaded_process_
 
 	// signal the main window that the thread has done fetching
 	SendMessage(window, ID_CONTEXT_UPDATEPLAYLIST_DONE, HIWORD(0), LOWORD(0));
+	DWORD lastError = GetLastError();
+	if (lastError != ERROR_SUCCESS) {
+		console::printf("Got error while sending message to window: %i", lastError);
+	}
+}
+
+void SubsonicLibraryScanner::retrieveAllSearchResults(HWND window, threaded_process_status &p_status, const char* url) {	
+	getSearchResults(url);
+
+	SendMessage(window, ID_SEARCH_DONE, HIWORD(0), LOWORD(0));
 	DWORD lastError = GetLastError();
 	if (lastError != ERROR_SUCCESS) {
 		console::printf("Got error while sending message to window: %i", lastError);

@@ -74,11 +74,11 @@ void XmlCacheDb::saveAlbums() {
 		album->SetAttribute("songCount", it->get_songCount());
 		
 
-		std::list<Track>* trackList = it->getTracks();
-		std::list<Track>::iterator trackIterator;
+		std::list<Track*>* trackList = it->getTracks();
+		std::list<Track*>::iterator trackIterator;
 		for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
 			TiXmlElement* track = new TiXmlElement("Track");			
-			Track* t = &*trackIterator;
+			Track* t = *trackIterator;
 
 			setTrackInfo(track, t);
 			// do not save stream url, as it contains username and password!
@@ -104,12 +104,14 @@ void XmlCacheDb::getAllAlbumsFromCache() {
 			if (!rootNode->FirstChildElement("Album")->NoChildren()) { // album has tracks
 
 				for (TiXmlElement* e = ae->FirstChildElement("Track"); e != NULL; e = e->NextSiblingElement("Track")) {
-					Track t = Track();
+					Track* t = new Track();
 
-					parseTrackInfo(e, &t);
+					parseTrackInfo(e, t);
 					// we dont save artist and album title in each record to avoid unnecessary information duplication
-					t.set_artist(XmlStrOrDefault(ae, "artist", "")); // add artist info from album record
-					t.set_album(XmlStrOrDefault(ae, "title", "")); // add album title from album record
+					t->set_artist(XmlStrOrDefault(ae, "artist", "")); // add artist info from album record
+					t->set_album(XmlStrOrDefault(ae, "title", "")); // add album title from album record					
+
+					addToUrlMap(t);
 
 					a.addTrack(t);
 				}
@@ -121,6 +123,50 @@ void XmlCacheDb::getAllAlbumsFromCache() {
 
 std::list<Album>* XmlCacheDb::getAllAlbums() {
 	return &albumlist;
+}
+
+Album* XmlCacheDb::getAllSearchResults() {
+	return &searchResults;
+}
+
+void XmlCacheDb::addToUrlMap(Track* t) {
+	if (urlToTrackMap.count(t->get_id().c_str()) == 0) {		
+		/*
+			Track* trk = new Track();
+			trk->set_title(t->get_title());
+			trk->set_album(t->get_album());
+			trk->set_tracknumber(t->get_tracknumber());
+			trk->set_id(t->get_id());
+		*/
+		urlToTrackMap[t->get_id().c_str()] = t;
+	}
+}
+
+void XmlCacheDb::addSearchResult(Track* t) {
+	searchResults.addTrack(t);
+	addToUrlMap(t);
+}
+
+void XmlCacheDb::addAlbum(Album a) {
+	std::list<Track*>* trackList = a.getTracks();
+	std::list<Track*>::iterator trackIterator;
+
+	for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
+		addToUrlMap(*trackIterator);	
+	}
+
+	albumlist.push_back(a);
+}
+
+void XmlCacheDb::addPlaylist(Playlist p) {
+	std::list<Track*>* trackList = p.getTracks();
+	std::list<Track*>::iterator trackIterator;
+
+	for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
+		addToUrlMap(*trackIterator);
+	}
+
+	playlists.push_back(p);
 }
 
 void XmlCacheDb::savePlaylists() {
@@ -154,11 +200,11 @@ void XmlCacheDb::savePlaylists() {
 		playlist->SetAttribute("owner", it->get_owner());
 		playlist->SetAttribute("songCount", it->get_songcount());
 
-		std::list<Track>* trackList = it->getTracks();
-		std::list<Track>::iterator trackIterator;
+		std::list<Track*>* trackList = it->getTracks();
+		std::list<Track*>::iterator trackIterator;
 		for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
 			TiXmlElement* track = new TiXmlElement("Track");
-			Track* t = &*trackIterator;
+			Track* t = *trackIterator;
 
 			setTrackInfo(track, t);
 			// do not save stream url, as it contains username and password!
@@ -179,13 +225,13 @@ void XmlCacheDb::getAllPlaylistsFromCache() {
 			if (!rootNode->FirstChildElement("Playlist")->NoChildren()) { // album has tracks
 
 				for (TiXmlElement* e = ae->FirstChildElement("Entry"); e != NULL; e = e->NextSiblingElement("Entry")) {
-					Track t = Track();
+					Track* t = new Track();
 
-					parseTrackInfo(e, &t);
+					parseTrackInfo(e, t);
 					// we dont save artist and album title in each record to avoid unnecessary information duplication
-					t.set_artist(XmlStrOrDefault(ae, "artist", "")); // add artist info from album record
-					t.set_album(XmlStrOrDefault(ae, "title", "")); // add album title from album record
-
+					t->set_artist(XmlStrOrDefault(ae, "artist", "")); // add artist info from album record
+					t->set_album(XmlStrOrDefault(ae, "title", "")); // add album title from album record
+					addToUrlMap(t);
 					a.addTrack(t);
 				}
 			}
@@ -198,13 +244,10 @@ std::list<Playlist>* XmlCacheDb::getAllPlaylists() {
 	return &playlists;
 }
 
-bool XmlCacheDb::getTrackDetailsByUrl(const char* url, Track* t) {
+bool XmlCacheDb::getTrackDetailsByUrl(const char* url, Track &t) {
 
 	std::string strUrl = url;
 	std::string result;
-	if (t == nullptr) {
-		return FALSE;
-	}	
 
 	std::regex re(".*id=([^&]+).*");
 	std::smatch match;
@@ -215,32 +258,25 @@ bool XmlCacheDb::getTrackDetailsByUrl(const char* url, Track* t) {
 		return FALSE;
 	}
 
-	std::list<Album>::iterator it;
-	for (it = albumlist.begin(); it != albumlist.end(); it++) {
-		std::list<Track>* trackList = it->getTracks();
-		std::list<Track>::iterator trackIterator;
-		for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
+	if (urlToTrackMap.count(result) > 0) { // fast way
+		std::map<std::string, Track*>::iterator i = urlToTrackMap.find(result);
+		t = *i->second;
+		return TRUE;
+	}
+	else { // no luck on the fast lane, take the long and slow road ...
 
-			uDebugLog() << "Comparing: T->ID: '" << trackIterator->get_id() << "' --- Given ID: '" << result.c_str() << "'";
+		std::list<Album>::iterator it;
+		for (it = albumlist.begin(); it != albumlist.end(); it++) {
+			std::list<Track*>* trackList = it->getTracks();
+			std::list<Track*>::iterator trackIterator;
+			for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
+				
+				uDebugLog() << "Comparing: T->ID: '" << (*trackIterator)->get_id() << "' --- Given ID: '" << result.c_str() << "'";
 
-			if (strcmp(trackIterator->get_id().c_str(), result.c_str()) == 0) {
-				t->set_album(trackIterator->get_album());
-				t->set_artist(trackIterator->get_artist());
-				t->set_artistId(trackIterator->get_artistId());
-				t->set_bitrate(trackIterator->get_bitrate());
-				t->set_contentType(trackIterator->get_contentType());
-				t->set_coverArt(trackIterator->get_coverArt());
-				t->set_duration(trackIterator->get_duration());
-				t->set_genre(trackIterator->get_genre());
-				t->set_id(trackIterator->get_id());
-				t->set_size(trackIterator->get_size());
-				t->set_streamUrl(trackIterator->get_streamUrl());
-				t->set_suffix(trackIterator->get_suffix());
-				t->set_title(trackIterator->get_title());
-				t->set_tracknumber(trackIterator->get_tracknumber());
-				t->set_year(trackIterator->get_year());
-				t->set_parentId(trackIterator->get_parentId());
-				return TRUE;
+				if (strcmp((*trackIterator)->get_id().c_str(), result.c_str()) == 0) {
+					t = **trackIterator;
+					return TRUE;
+				}
 			}
 		}
 	}

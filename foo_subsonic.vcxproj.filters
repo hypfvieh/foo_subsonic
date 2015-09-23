@@ -45,6 +45,9 @@
     <ClCompile Include="xmlhelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="searchQueryThread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -99,6 +102,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="album_art.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="search.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="searchQueryThread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ListviewHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

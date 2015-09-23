@@ -3,6 +3,7 @@
 // Verwendet durch foo_subsonic.rc
 //
 #define IDD_PREFERENCES                 108
+#define IDD_SEARCH                      110
 #define IDD_MYPREFERENCES               148
 #define IDC_BOGO1                       1001
 #define IDC_SLIDER1                     1012
@@ -19,6 +20,11 @@
 #define IDC_LBL_TIMEOUT                 1030
 #define IDC_LBL_TIMEOUT_SEC             1031
 #define IDC_CHK_PASSWORD_AS_HASH        1032
+#define IDC_SEARCHTERM                  1033
+#define IDC_CBSEARCHAREA                1034
+#define IDC_RESULTLIST                  1035
+#define IDC_LBL_SEARCH                  1036
+#define IDC_LBL_CATEGORY                1037
 #define IDC_CONNECT_URL_DATA            1047
 #define IDC_USERNAME_DATA               1049
 #define IDC_PASSWORD_DATA               1050
@@ -30,9 +36,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        110
+#define _APS_NEXT_RESOURCE_VALUE        112
 #define _APS_NEXT_COMMAND_VALUE         40008
-#define _APS_NEXT_CONTROL_VALUE         1033
+#define _APS_NEXT_CONTROL_VALUE         1040
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

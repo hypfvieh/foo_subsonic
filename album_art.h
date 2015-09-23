@@ -55,10 +55,11 @@ public:
 				if (std::regex_search(itempath, match, re)) { // matches
 					//album_art_extractor bla = album_art_extractor::g
 					uDebugLog() << "Found matching URL: " << itempath.c_str();
-
+					throw exception_album_art_not_found();
 					return nullptr;
 				}
 				else { // does not match
+					throw exception_album_art_not_found();
 					return nullptr;
 				}
 			}			

@@ -5,9 +5,12 @@
 
 #define ID_CONTEXT_UPDATECATALOG			WM_USER + 101
 #define ID_CONTEXT_UPDATEPLAYLIST			WM_USER + 102
+#define ID_CONTEXT_SEARCHDIALOG 			WM_USER + 103
 
 #define ID_CONTEXT_UPDATECATALOG_DONE       WM_APP  + 201
 #define ID_CONTEXT_UPDATEPLAYLIST_DONE      WM_APP  + 202
+
+#define ID_SEARCH_DONE						WM_APP  + 301
 
 #define IDC_TREEVIEWCTRL					2053
 
@@ -31,6 +34,7 @@ namespace foo_subsonic {
 			MESSAGE_HANDLER(ID_CONTEXT_UPDATEPLAYLIST_DONE, OnContextPlaylistUpdateDone);
 			COMMAND_ID_HANDLER(ID_CONTEXT_UPDATECATALOG, OnContextCatalogUpdate);
 			COMMAND_ID_HANDLER(ID_CONTEXT_UPDATEPLAYLIST, OnContextPlaylistUpdate);
+			COMMAND_ID_HANDLER(ID_CONTEXT_SEARCHDIALOG, OnSearchDialogShow);
 			COMMAND_ID_HANDLER(TVN_BEGINDRAG, foo);
 			MSG_WM_MOUSEMOVE(OnMouseMove);
 			MSG_WM_LBUTTONUP(OnLButtonUp);
@@ -48,6 +52,7 @@ namespace foo_subsonic {
 
 		LRESULT OnContextCatalogUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT OnContextPlaylistUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+		LRESULT OnSearchDialogShow(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 
 		LRESULT OnContextCatalogUpdateDone(UINT, WPARAM, LPARAM, BOOL&);
 		LRESULT OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL&);
@@ -89,7 +94,7 @@ namespace foo_subsonic {
 		HTREEITEM catalogRootNodes[28];
 		HTREEITEM getRootTreeNodeForArtist(wchar_t bgnLetter);
 
-		void addTracksToTreeNode(std::list<Track>* trackList, HTREEITEM albumNode, bool withTrackNumber);
+		void addTracksToTreeNode(std::list<Track*>* trackList, HTREEITEM albumNode, bool withTrackNumber);
 
 	protected:
 		CSubsonicUi() {

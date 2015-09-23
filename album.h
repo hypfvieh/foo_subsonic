@@ -23,11 +23,11 @@ class Album : public CoreEntity {
 	STRING_MEMBER(year)
 public:
 
-	void addTrack(Track t) {
+	void addTrack(Track* t) {
 		albumTracks.push_back(t);
 	}
 
-	std::list<Track>* getTracks() {
+	std::list<Track*>* getTracks() {
 		return &albumTracks;
 	}
 
@@ -42,6 +42,6 @@ public:
 	}
 
 private:
-	std::list<Track> albumTracks;
+	std::list<Track*> albumTracks;
 };
 

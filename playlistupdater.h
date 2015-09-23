@@ -13,7 +13,7 @@ public:
 			file_info_impl f_info;
 			Track t;
 
-			if (XmlCacheDb::getInstance()->getTrackDetailsByUrl(item.get_ptr()->get_path(), &t)) {
+			if (XmlCacheDb::getInstance()->getTrackDetailsByUrl(item.get_ptr()->get_path(), t)) {
 
 				pfc::string8 codec = t.get_contentType();
 				codec << " (" << t.get_suffix() << ")";

@@ -56,6 +56,14 @@ BEGIN
     IDD_PREFERENCES, DIALOG
     BEGIN
     END
+
+    IDD_SEARCH, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 556
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 247
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -89,6 +97,18 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,162,63,109,10
 END
 
+IDD_SEARCH DIALOGEX 0, 0, 563, 254
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Subsonic - Search"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Close",IDCANCEL,506,233,50,14
+    EDITTEXT        IDC_SEARCHTERM,35,19,460,14,ES_AUTOHSCROLL
+    CONTROL         "",IDC_RESULTLIST,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,7,34,549,196
+    LTEXT           "Search:",IDC_LBL_SEARCH,7,21,26,8
+    DEFPUSHBUTTON   "Find",IDOK,506,18,50,14
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -103,6 +123,16 @@ END
 IDD_PREFERENCES AFX_DIALOG_LAYOUT
 BEGIN
     0
+END
+
+IDD_SEARCH AFX_DIALOG_LAYOUT
+BEGIN
+    0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 100, 100,
+    0, 0, 0, 0,
+    0, 0, 0, 0
 END
 
 #endif    // Englisch (USA) resources
