@@ -48,6 +48,9 @@
     <ClCompile Include="searchQueryThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FakeAlbumArtExtractor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -113,7 +116,13 @@
     <ClInclude Include="ListviewHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CColorEdit.h">
+    <ClInclude Include="SimpleHttpClientConfigurator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FakeAlbumArtExtractor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AlbumArtExtractorInstanceHttp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

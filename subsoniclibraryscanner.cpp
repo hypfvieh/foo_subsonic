@@ -6,6 +6,7 @@
 #include "simplehttpclient.h"
 #include "xmlhelper.h"
 #include "xmlcachedb.h"
+#include "SimpleHttpClientConfigurator.h"
 
 #include <winhttp.h>
 
@@ -13,76 +14,33 @@ using namespace foo_subsonic;
 using namespace XmlHelper;
 
 /*
-  Checks if all required preferences were configured before, and if they are "correct".
-*/
-BOOL check_preferences() {
-	if (Preferences::connect_url_data.is_empty()) {
-		console::error("URL cannot be empty!");
-		return FALSE;
-	}
-	else { // validate url
-		pfc::string url = Preferences::connect_url_data;
-		url = url.toLower();
-		if (!url.startsWith("http://") && !url.startsWith("https://")) {
-			console::error("Url has to start with http:// or https://");
-			return FALSE;
-		}
-		
-		if (Preferences::proxy_settings_custom_data) {
-			url = Preferences::proxy_url_data;
-			url = url.toLower();
-			if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("socks://") && !url.startsWith("socks5://")) {
-				console::error("Proxy-Address has to start with http:// or socks5://");
-				return FALSE;
-			}
-		}
-		
-	}
-
-	return TRUE;
-}
-
-/*
 	Setup everything and connect to server, calling given @restMethod.
 */
 BOOL SubsonicLibraryScanner::connectAndGet(TiXmlDocument* doc, const char* restMethod, const char* urlparams) {
 
-	if (!check_preferences()) {
+	if (!SimpleHttpClientConfigurator::check_preferences()) {
 		return FALSE;
 	}
-	pfc::string8 url = buildRequestUrl(restMethod, urlparams);
-	
-	BOOL isHttps = FALSE;
-
+	pfc::string8 url = SimpleHttpClientConfigurator::buildRequestUrl(restMethod, urlparams);
 	SimpleHttpClientConfig cliConfig;
 
-	if (Preferences::proxy_settings_custom_data) {
+	if (SimpleHttpClientConfigurator::createSimpleHttpClientConfigFromPreferences(cliConfig)) {
 
-		pfc::stringcvt::string_wide_from_utf8 proxyHost(Preferences::proxy_url_data);
-		
-		cliConfig.setProxyUrl(proxyHost);
-		cliConfig.useProxy = PROXY_CUSTOM;		
-	}
-	else if (Preferences::proxy_settings_system_data) {
-		cliConfig.useProxy = PROXY_SYSTEM;
+		SimpleHttpClient cli = SimpleHttpClient(cliConfig);
+
+		char* buffer = NULL;
+		size_t buffSize = 0;
+
+		cli.open(url.c_str());
+		cli.send_request(buffer, buffSize);	
+			
+		// Parse	
+		doc->Parse(buffer, 0, TIXML_ENCODING_UTF8);
+		return checkForError(doc);
 	}
 	else {
-		cliConfig.useProxy = PROXY_OFF;
+		console::error("Error while configuring HTTP(s) connection");
 	}
-
-	cliConfig.timeoutInSec = Preferences::connect_timeout_data;	
-	cliConfig.disableCertVerify = Preferences::check_selfsignedcerts_data;
-
-	SimpleHttpClient cli = SimpleHttpClient(cliConfig);
-
-	pfc::string8 buffer;
-
-	cli.open(url.c_str());
-	cli.send_request(buffer);	
-	
-	// Parse	
-	doc->Parse(buffer, 0, TIXML_ENCODING_UTF8);
-	return checkForError(doc);
 }
 
 /*

@@ -288,10 +288,13 @@ public:
 		return result ? true : false;
 	}
 
+
+
+
 	/*
 		Send the request to the server and return the response in &responsebuffer.
 	*/
-	void SimpleHttpClient::send_request(pfc::string8 &responsebuffer) {
+	void SimpleHttpClient::send_request(char* &responsebuffer, size_t &buffSize) {
 
 		WINHTTP_PROXY_INFO info;
 		memset(&info, 0, sizeof(WINHTTP_PROXY_INFO));
@@ -358,17 +361,34 @@ public:
 			report_failure("Send Request");
 			return;
 		}
-
+  
 		unsigned long size;
 		if (!WinHttpReceiveResponse(m_request_handle, NULL) || !WinHttpQueryDataAvailable(m_request_handle, &size)) {
 			report_failure("Receiving Response");
 			return;
 		}
+		
 		while (size > 0) {
 			char *tmp = new char[size];
 			unsigned long downloaded;
 			WinHttpReadData(m_request_handle, tmp, size, &downloaded);
-			responsebuffer.add_string(tmp, downloaded);
+			//responsebuffer.add_string(tmp, downloaded);
+
+			if (responsebuffer == NULL) {
+				responsebuffer = new char[downloaded];
+				memcpy(responsebuffer, tmp, downloaded);
+				buffSize = downloaded;
+			}
+			else {
+				char *tmpBuffer = new char[downloaded + buffSize];
+				memcpy(tmpBuffer, responsebuffer, buffSize);
+				memcpy(&tmpBuffer[buffSize], tmp, downloaded);
+
+				delete[] responsebuffer;
+				responsebuffer = tmpBuffer;
+				buffSize += downloaded;
+			}
+
 			delete[] tmp;
 			WinHttpQueryDataAvailable(m_request_handle, &size);
 

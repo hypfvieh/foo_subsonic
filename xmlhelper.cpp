@@ -3,6 +3,7 @@
 #include "album.h"
 #include "playlist.h"
 #include "xmlhelper.h"
+#include "SimpleHttpClientConfigurator.h"
 
 
 namespace XmlHelper {
@@ -30,72 +31,6 @@ namespace XmlHelper {
 		else {
 			return default;
 		}
-	}
-
-	char to_hex(char c) {
-		return c < 0xa ? '0' + c : 'a' - 0xa + c;
-	}
-
-	std::string string_to_hex(const std::string& input)
-	{
-		static const char* const lut = "0123456789ABCDEF";
-		size_t len = input.length();
-
-		std::string output;
-		output.reserve(2 * len);
-		for (size_t i = 0; i < len; ++i)
-		{
-			const unsigned char c = input[i];
-			output.push_back(lut[c >> 4]);
-			output.push_back(lut[c & 15]);
-		}
-		return output;
-	}
-
-	pfc::string8 buildRequestUrl(const char* restMethod, pfc::string8 urlparams) {
-
-
-		// TODO: Use Hex feature on demand
-		std::string pass_as_hex = string_to_hex(Preferences::password_data.c_str());
-
-
-		pfc::string8 url;
-		url << Preferences::connect_url_data;
-		url << "/rest/";
-		url << restMethod << ".view";
-		url << "?v=1.8.0";
-		url << "&c=" << COMPONENT_SHORT_NAME;
-		url << "&u=" << url_encode(Preferences::username_data);
-		url << "&p=" << "enc:";
-		url << pass_as_hex.c_str();
-
-		if (sizeof(urlparams) > 0) {
-			url << "&" << urlparams;
-		}
-
-		return url;
-	}
-
-	
-	pfc::string8 url_encode(const char *in) {
-		pfc::string8 out;
-		out.prealloc(strlen(in) * 3 + 1);
-
-		for (register const char *tmp = in; *tmp != '\0'; tmp++) {
-			auto c = static_cast<unsigned char>(*tmp);
-			if (isalnum(c)) {
-				out.add_char(c);
-			}
-			else if (isspace(c)) {
-				out.add_char('+');
-			}
-			else {
-				out.add_char('%');
-				out.add_char(to_hex(c >> 4));
-				out.add_char(to_hex(c % 16));
-			}
-		}
-		return out;
 	}
 
 	void parseAlbumInfo(TiXmlElement* e, Album* a) {
@@ -150,7 +85,7 @@ namespace XmlHelper {
 		pfc::string8 idparam = "id=";
 		idparam << t->get_id();
 
-		pfc::string8 streamUrl = buildRequestUrl("stream", idparam);
+		pfc::string8 streamUrl = SimpleHttpClientConfigurator::buildRequestUrl("stream", idparam);
 		t->set_streamUrl(streamUrl);
 	}
 

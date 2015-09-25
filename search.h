@@ -3,9 +3,8 @@
 #include "foo_subsonic.h"
 #include "subsoniclibraryscanner.h"
 #include "searchQueryThread.h"
-#include "xmlhelper.h"
 #include "ListviewHelper.h"
-#include "CColorEdit.h"
+#include "SimpleHttpClientConfigurator.h"
 
 
 class SearchDialog : public CDialogImpl<SearchDialog> {
@@ -86,7 +85,7 @@ public:
 		if (nID == IDOK) {
 			uDebugLog() << "search enter";
 
-			pfc::string8 params = XmlHelper::url_encode(string_utf8_from_window(m_hWnd, IDC_SEARCHTERM));			
+			pfc::string8 params = SimpleHttpClientConfigurator::url_encode(string_utf8_from_window(m_hWnd, IDC_SEARCHTERM));
 
 			threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::SearchQueryThread>(&scanner, m_hWnd, params),
 				threaded_process::flag_show_progress | threaded_process::flag_show_abort, m_hWnd, "Searching Subsonic Server");

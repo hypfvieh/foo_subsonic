@@ -98,6 +98,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="FakeAlbumArtExtractor.cpp" />
     <ClCompile Include="initquit.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PCH.cpp">
@@ -115,9 +116,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="album.h" />
+    <ClInclude Include="AlbumArtExtractorInstanceHttp.h" />
     <ClInclude Include="album_art.h" />
-    <ClInclude Include="CColorEdit.h" />
     <ClInclude Include="CoreEntity.h" />
+    <ClInclude Include="FakeAlbumArtExtractor.h" />
     <ClInclude Include="foo_subsonic.h" />
     <ClInclude Include="ListviewHelper.h" />
     <ClInclude Include="meta.h" />
@@ -130,6 +132,7 @@
     <ClInclude Include="search.h" />
     <ClInclude Include="searchQueryThread.h" />
     <ClInclude Include="simplehttpclient.h" />
+    <ClInclude Include="SimpleHttpClientConfigurator.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="subsoniclibraryscanner.h" />
     <ClInclude Include="track.h" />

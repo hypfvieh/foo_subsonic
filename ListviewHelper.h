@@ -66,7 +66,7 @@ namespace listviewHelper {
 	}
 
 
-	unsigned insert_column(HWND p_listview, unsigned p_index, const char * p_name, unsigned p_width_dlu)
+	unsigned insert_column(HWND p_listview, unsigned p_index, const char * p_name, LONG p_width_dlu)
 	{
 		pfc::stringcvt::string_os_from_utf8 os_string_temp(p_name);
 
