@@ -71,9 +71,7 @@ album_art_extractor_instance_v2::ptr FakeAlbumArtExtractor::open_v2(file_ptr p_f
 		throw exception_album_art_not_found();
 	}
 
-	service_impl_t<HttpAlbumArtExtractorInstance> *inst = new service_impl_t<HttpAlbumArtExtractorInstance>();
-
-	//service_ptr_t<HttpAlbumArtExtractorInstance> inst; // always NULL?!?!
+	service_impl_t<HttpAlbumArtExtractorInstance>* inst = new service_impl_t<HttpAlbumArtExtractorInstance>();
 
 	album_art_data_ptr data = album_art_data_impl::g_create(buffer, buffSize);
 
