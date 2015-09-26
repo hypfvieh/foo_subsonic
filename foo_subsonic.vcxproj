@@ -47,7 +47,7 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>..\..\wtl\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\sqlite3;..\..\wtl\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -109,6 +109,7 @@
     <ClCompile Include="preferences.cpp" />
     <ClCompile Include="albumQueryThread.cpp" />
     <ClCompile Include="searchQueryThread.cpp" />
+    <ClCompile Include="sqliteCacheDb.cpp" />
     <ClCompile Include="subsoniclibraryscanner.cpp" />
     <ClCompile Include="ui.cpp" />
     <ClCompile Include="xmlcachedb.cpp" />
@@ -133,6 +134,7 @@
     <ClInclude Include="searchQueryThread.h" />
     <ClInclude Include="simplehttpclient.h" />
     <ClInclude Include="SimpleHttpClientConfigurator.h" />
+    <ClInclude Include="sqliteCacheDb.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="subsoniclibraryscanner.h" />
     <ClInclude Include="track.h" />

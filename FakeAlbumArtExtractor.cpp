@@ -60,6 +60,10 @@ album_art_extractor_instance_v2::ptr FakeAlbumArtExtractor::open_v2(file_ptr p_f
 	pfc::string8 artId = "id=";
 	artId << SimpleHttpClientConfigurator::url_encode(id);
 
+	if (Preferences::coverart_resize) { // User wants to 'save bandwidth', add resize flag
+		artId << "&size=" << Preferences::coverart_size_data;
+	}
+
 	pfc::string8 url = SimpleHttpClientConfigurator::buildRequestUrl("getCoverArt", artId);
 
 	client.open(url.c_str());

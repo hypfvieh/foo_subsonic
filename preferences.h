@@ -32,4 +32,14 @@ namespace Preferences {
 	extern const GUID guid_proxy_settings_custom_data;
 	extern cfg_bool proxy_settings_custom_data;
 
+	// CoverArt Stuff
+	extern const GUID guid_coverart_size_data;
+	extern cfg_int coverart_size_data;
+
+	extern const GUID guid_coverart_download;
+	extern cfg_bool coverart_download;
+
+	extern const GUID guid_coverart_resize;
+	extern cfg_bool coverart_resize;
+
 }

@@ -27,6 +27,14 @@ public:
 		albumTracks.push_back(t);
 	}
 
+	void addTracks(std::list<Track> list) {
+		std::list<Track>::iterator trackIterator;
+		for (trackIterator = list.begin(); trackIterator != list.end(); trackIterator++) {
+			Track t = *trackIterator;
+			albumTracks.push_back(&t);
+		}
+	}
+
 	std::list<Track*>* getTracks() {
 		return &albumTracks;
 	}

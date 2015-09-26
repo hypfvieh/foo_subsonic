@@ -8,9 +8,11 @@ using namespace XmlHelper;
 XmlCacheDb* XmlCacheDb::instance = NULL;
 
 XmlCacheDb::XmlCacheDb() {
-	internalDoc = TiXmlDocument("foo_subsonic_cache.xml");
+	std::string userDir = core_api::get_profile_path(); // save cache to user profile, if enabled
+	userDir += "\\foo_subsonic_cache.xml";
+	internalDoc = TiXmlDocument(userDir.c_str());
 	if (!internalDoc.LoadFile()) {
-		console::print("Offline cache not found, creating new");
+		uDebugLog() << "Offline cache not found, creating new";
 	}
 	else {
 		getAllAlbumsFromCache();

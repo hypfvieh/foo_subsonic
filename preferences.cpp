@@ -21,21 +21,27 @@ namespace Preferences {
 	cfg_int connect_timeout_data(guid_connect_timeout_data, 10);
 
 	// Proxy Stuff
-	// {91582C5C-E5CF-4B21-9518-591CDD43E245}
 	const GUID guid_proxy_url_data = { 0x91582c5c, 0xe5cf, 0x4b21,{ 0x95, 0x18, 0x59, 0x1c, 0xdd, 0x43, 0xe2, 0x45 } };
 	cfg_string proxy_url_data(guid_proxy_url_data, "");
 
-	// {C837B708-F51F-4E22-AEE2-9707DB78CAA5}
 	const GUID guid_proxy_settings_no_data = { 0xc837b708, 0xf51f, 0x4e22,{ 0xae, 0xe2, 0x97, 0x7, 0xdb, 0x78, 0xca, 0xa5 } };
-	cfg_bool proxy_settings_no_data(guid_proxy_settings_no_data, "");
+	cfg_bool proxy_settings_no_data(guid_proxy_settings_no_data, true);
 
-	// {355211D1-5DE2-46AD-AFB1-9DFE18F8D4CB}
 	const GUID guid_proxy_settings_system_data = { 0x355211d1, 0x5de2, 0x46ad,{ 0xaf, 0xb1, 0x9d, 0xfe, 0x18, 0xf8, 0xd4, 0xcb } };
-	cfg_bool proxy_settings_system_data(guid_proxy_settings_system_data, "");
+	cfg_bool proxy_settings_system_data(guid_proxy_settings_system_data, false);
 
-	// {2BE7E55F-CC61-4368-A53F-47685B9783D2}
 	const GUID guid_proxy_settings_custom_data = { 0x2be7e55f, 0xcc61, 0x4368,{ 0xa5, 0x3f, 0x47, 0x68, 0x5b, 0x97, 0x83, 0xd2 } };
-	cfg_bool proxy_settings_custom_data(guid_proxy_settings_custom_data, "");
+	cfg_bool proxy_settings_custom_data(guid_proxy_settings_custom_data, false);
+
+	// CoverArt Stuff
+	const GUID guid_coverart_size_data = { 0xf79bf5f6, 0x6630, 0x415b,{ 0x80, 0xcc, 0x38, 0x3c, 0xc8, 0x67, 0x46, 0x86 } };
+	cfg_int coverart_size_data(guid_coverart_size_data, 500);
+
+	const GUID guid_coverart_download = { 0x1a4e3073, 0x6af4, 0x4d9c,{ 0x89, 0xb5, 0x6c, 0xe0, 0xb0, 0x17, 0xdb, 0x3f } };
+	cfg_bool coverart_download(guid_coverart_download, true);
+
+	const GUID guid_coverart_resize = { 0x4ed09771, 0x2bc5, 0x4f63,{ 0xba, 0xa3, 0x46, 0x18, 0x60, 0xec, 0x28, 0xa } };
+	cfg_bool coverart_resize(guid_coverart_resize, true);
 
 }
 class PreferencesPageInstance : public CDialogImpl<PreferencesPageInstance>, public preferences_page_instance {
@@ -43,11 +49,15 @@ private:
 	CEdit connect_url;
 	CEdit username;
 	CEdit password;
-	CCheckBox use_selfsignedcerts;
-	CCheckBox use_pass_as_hex;
 
 	CEdit proxy_url;
 	CEdit connect_timeout;
+	CEdit coverart_size;
+
+	CCheckBox use_selfsignedcerts;
+	CCheckBox use_pass_as_hex;
+	CCheckBox use_coverart_dl;
+	CCheckBox use_coverart_resize;
 
 	CButton proxy_settings_no;
 	CButton proxy_settings_system;
@@ -73,6 +83,9 @@ public:
 		COMMAND_HANDLER_EX(IDC_RADIO_PROXY_NO, BN_CLICKED, OnChanged)
 		COMMAND_HANDLER_EX(IDC_PROXY_URL_DATA, EN_UPDATE, OnChanged)
 		COMMAND_HANDLER_EX(IDC_CONNECT_TIMEOUT_DATA, EN_UPDATE, OnChanged)
+		COMMAND_HANDLER_EX(IDC_CHK_RESIZECOVERART, EN_UPDATE, OnChanged)
+		COMMAND_HANDLER_EX(IDC_CHK_DLCOVERART, EN_UPDATE, OnChanged)
+		COMMAND_HANDLER_EX(IDC_TXT_COVERARTSIZE, EN_UPDATE, OnChanged)
 	END_MSG_MAP()
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
@@ -81,7 +94,12 @@ public:
 		username = GetDlgItem(IDC_USERNAME_DATA);
 		password = GetDlgItem(IDC_PASSWORD_DATA);
 
+		coverart_size = GetDlgItem(IDC_TXT_COVERARTSIZE);
+
 		use_selfsignedcerts = GetDlgItem(IDC_CHECK_SELFSIGNED);
+		use_coverart_dl = GetDlgItem(IDC_CHK_DLCOVERART);
+		use_coverart_resize = GetDlgItem(IDC_CHK_RESIZECOVERART);
+
 		use_pass_as_hex = GetDlgItem(IDC_CHK_PASSWORD_AS_HASH);
 
 		proxy_url = GetDlgItem(IDC_PROXY_HOSTNAME_DATA);
@@ -97,9 +115,11 @@ public:
 
 		uSetWindowText(proxy_url, Preferences::proxy_url_data);
 
-		char foo[20];
-		snprintf(foo, sizeof(foo), "%i", Preferences::connect_timeout_data.get_value());		
-		uSetWindowText(connect_timeout, foo);
+		char tmp[20];
+		snprintf(tmp, sizeof(tmp), "%i", Preferences::connect_timeout_data.get_value());
+		uSetWindowText(connect_timeout, tmp);
+		snprintf(tmp, sizeof(tmp), "%i", Preferences::coverart_size_data);
+		uSetWindowText(coverart_size, tmp);
 
 		//CheckRadioButton(IDC_RADIO_PROXY_NO, IDC_RADIO_PROXY_CUSTOM, IDC_RADIO)
 		CheckDlgButton(IDC_RADIO_PROXY_NO, Preferences::proxy_settings_no_data);
@@ -108,6 +128,9 @@ public:
 
 		CheckDlgButton(IDC_CHECK_SELFSIGNED, Preferences::check_selfsignedcerts_data);
 		CheckDlgButton(IDC_CHK_PASSWORD_AS_HASH, Preferences::check_pass_as_hex_data);
+
+		CheckDlgButton(IDC_CHK_DLCOVERART, Preferences::coverart_download);
+		CheckDlgButton(IDC_CHK_RESIZECOVERART, Preferences::coverart_resize);
 
 		return 0;
 	}
@@ -134,8 +157,6 @@ public:
 
 		bool data;
 		
-		//CheckDlgButton(IDC_CHECK_CUSTOMPORT, 0);
-
 		data = IsDlgButtonChecked(IDC_CHECK_SELFSIGNED) == BST_CHECKED;
 		if (Preferences::check_selfsignedcerts_data != data) return true;
 
@@ -150,6 +171,12 @@ public:
 
 		data = IsDlgButtonChecked(IDC_RADIO_PROXY_NO) == BST_CHECKED;
 		if (Preferences::proxy_settings_no_data != data) return true;
+
+		data = IsDlgButtonChecked(IDC_CHK_DLCOVERART) == BST_CHECKED;
+		if (Preferences::coverart_download != data) return true;
+
+		data = IsDlgButtonChecked(IDC_CHK_RESIZECOVERART) == BST_CHECKED;
+		if (Preferences::coverart_resize != data) return true;
 
 		return false;
 	}
@@ -174,9 +201,12 @@ public:
 
 		uGetWindowText(proxy_url, Preferences::proxy_url_data);
 
-		pfc::string8 foo;
-		uGetWindowText(connect_timeout, foo);
-		Preferences::connect_timeout_data = atoi(foo.c_str());
+		pfc::string8 tmp;
+		uGetWindowText(connect_timeout, tmp);
+		Preferences::connect_timeout_data = atoi(tmp.c_str());
+
+		uGetWindowText(coverart_size, tmp);
+		Preferences::coverart_size_data = atoi(tmp.c_str());
 		
 		Preferences::check_pass_as_hex_data = IsDlgButtonChecked(IDC_CHK_PASSWORD_AS_HASH) == BST_CHECKED;
 		Preferences::check_selfsignedcerts_data = IsDlgButtonChecked(IDC_CHECK_SELFSIGNED) == BST_CHECKED;
@@ -184,6 +214,9 @@ public:
 		Preferences::proxy_settings_no_data = IsDlgButtonChecked(IDC_RADIO_PROXY_NO) == BST_CHECKED;
 		Preferences::proxy_settings_system_data = IsDlgButtonChecked(IDC_RADIO_PROXY_SYSTEM) == BST_CHECKED;
 		Preferences::proxy_settings_custom_data = IsDlgButtonChecked(IDC_RADIO_PROXY_CUSTOM) == BST_CHECKED;
+
+		Preferences::coverart_download = IsDlgButtonChecked(IDC_CHK_DLCOVERART) == BST_CHECKED;
+		Preferences::coverart_resize = IsDlgButtonChecked(IDC_CHK_RESIZECOVERART) == BST_CHECKED;
 	}
 
 	void on_change() {
@@ -198,10 +231,17 @@ public:
 		uSetWindowText(proxy_url, "");
 		uSetWindowText(connect_timeout, "10");
 
+		uSetWindowText(coverart_size, "500");
+
 		CheckDlgButton(IDC_CHECK_SELFSIGNED, FALSE);
 		CheckDlgButton(IDC_CHK_PASSWORD_AS_HASH, TRUE);
 
-		CheckRadioButton(IDC_RADIO_PROXY_NO, IDC_RADIO_PROXY_CUSTOM, IDC_RADIO_PROXY_NO);
+		CheckDlgButton(IDC_CHK_DLCOVERART, TRUE);
+		CheckDlgButton(IDC_CHK_RESIZECOVERART, TRUE);
+
+		CheckDlgButton(IDC_RADIO_PROXY_NO, TRUE);
+		CheckDlgButton(IDC_RADIO_PROXY_CUSTOM, FALSE);
+		CheckDlgButton(IDC_RADIO_PROXY_SYSTEM, FALSE);
 
 		on_change();
 	}
