@@ -19,6 +19,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foo_subsonic", "foo_subsoni
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tinyxml", "..\..\tinyxml\tinyxml_lib.vcxproj", "{C406DAEC-0886-4771-8DEA-9D7329B46CC1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlite3", "sqlite3\sqlite3.vcxproj", "{FB1E9702-8627-4AF6-AB9E-BB52729D112F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -87,6 +89,14 @@ Global
 		{C406DAEC-0886-4771-8DEA-9D7329B46CC1}.Release|x64.ActiveCfg = Release|Win32
 		{C406DAEC-0886-4771-8DEA-9D7329B46CC1}.Release|x86.ActiveCfg = Release|Win32
 		{C406DAEC-0886-4771-8DEA-9D7329B46CC1}.Release|x86.Build.0 = Release|Win32
+		{FB1E9702-8627-4AF6-AB9E-BB52729D112F}.Debug|x64.ActiveCfg = Debug|x64
+		{FB1E9702-8627-4AF6-AB9E-BB52729D112F}.Debug|x64.Build.0 = Debug|x64
+		{FB1E9702-8627-4AF6-AB9E-BB52729D112F}.Debug|x86.ActiveCfg = Debug|Win32
+		{FB1E9702-8627-4AF6-AB9E-BB52729D112F}.Debug|x86.Build.0 = Debug|Win32
+		{FB1E9702-8627-4AF6-AB9E-BB52729D112F}.Release|x64.ActiveCfg = Release|x64
+		{FB1E9702-8627-4AF6-AB9E-BB52729D112F}.Release|x64.Build.0 = Release|x64
+		{FB1E9702-8627-4AF6-AB9E-BB52729D112F}.Release|x86.ActiveCfg = Release|Win32
+		{FB1E9702-8627-4AF6-AB9E-BB52729D112F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,11 +1,6 @@
 #pragma once
 #include "foo_subsonic.h"
 
-#ifndef DUMMY_GUID
-
-#define DUMMY_GUID
-#endif
-
 
 class HttpAlbumArtExtractorInstance : public album_art_extractor_instance_v2 {
 public:

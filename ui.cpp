@@ -2,7 +2,8 @@
 #include "ui.h"
 #include "subsoniclibraryscanner.h"
 #include "albumQueryThread.h"
-#include "xmlcachedb.h"
+//#include "xmlcachedb.h"
+#include "sqliteCacheDb.h"
 #include "playlistupdater.h"
 #include "search.h"
 
@@ -288,14 +289,14 @@ void CSubsonicUi::populateTreeWithPlaylists(std::list<Playlist>* playlists) {
 }
 
 LRESULT CSubsonicUi::OnContextCatalogUpdateDone(UINT, WPARAM, LPARAM, BOOL&) {
-	populateTreeWithAlbums(XmlCacheDb::getInstance()->getAllAlbums());
+	populateTreeWithAlbums(SqliteCacheDb::getInstance()->getAllAlbums());
 
 	return 0;
 }
 
 LRESULT CSubsonicUi::OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL &)
 {	
-	populateTreeWithPlaylists(XmlCacheDb::getInstance()->getAllPlaylists());
+	populateTreeWithPlaylists(SqliteCacheDb::getInstance()->getAllPlaylists());
 
 	return 0;
 }

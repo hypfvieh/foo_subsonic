@@ -2,12 +2,16 @@
 #include "sqliteCacheDb.h"
 #include <regex>
 
+SqliteCacheDb* SqliteCacheDb::instance = NULL;
+
 
 SqliteCacheDb::SqliteCacheDb() {
 	char *errMsg = 0;
 
-	std::string userDir = core_api::get_profile_path(); // save cache to user profile, if enabled
+	pfc::string userDir = core_api::get_profile_path(); // save cache to user profile, if enabled
 	userDir += "\\foo_subsonic_cache.db";
+
+	userDir = userDir.replace("file://", "");
 
 	int rc = sqlite3_open_v2(userDir.c_str(), &db, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
 	if (rc) {
@@ -23,6 +27,8 @@ SqliteCacheDb::SqliteCacheDb() {
 				uDebugLog() << "Unable to create table: " << errMsg;
 			}
 		}
+		getAllAlbumsFromCache();
+		getAllPlaylistsFromCache();
 	}
 }
 
@@ -42,13 +48,6 @@ Album* SqliteCacheDb::getAllSearchResults() {
 
 void SqliteCacheDb::addToUrlMap(Track* t) {
 	if (urlToTrackMap.count(t->get_id().c_str()) == 0) {
-		/*
-		Track* trk = new Track();
-		trk->set_title(t->get_title());
-		trk->set_album(t->get_album());
-		trk->set_tracknumber(t->get_tracknumber());
-		trk->set_id(t->get_id());
-		*/
 		urlToTrackMap[t->get_id().c_str()] = t;
 	}
 }
@@ -126,11 +125,9 @@ bool SqliteCacheDb::getTrackDetailsByUrl(const char* url, Track &t) {
 void SqliteCacheDb::savePlaylists() {
 	std::list<Playlist>::iterator it;
 
-	int rc;
-
 	for (it = playlists.begin(); it != playlists.end(); it++) {
 		sqlite3_stmt* t_stmt = NULL;
-		sqlite3_prepare_v2(db, "INSERT INTO playlists (id, comment, coverArt, duration, public, name, owner, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)", -1, &t_stmt, NULL);
+		sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO playlists (id, comment, coverArt, duration, public, name, owner, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);", -1, &t_stmt, NULL);
 
 		sqlite3_bind_text(t_stmt, 1, it->get_id(), -1, SQLITE_STATIC);
 		sqlite3_bind_text(t_stmt, 2, it->get_comment(), -1, SQLITE_STATIC);
@@ -142,6 +139,8 @@ void SqliteCacheDb::savePlaylists() {
 		sqlite3_bind_int(t_stmt, 5, it->get_isPublic());
 		sqlite3_bind_int(t_stmt, 8, it->get_songcount());
 
+		sqlite3_bind_text(t_stmt, 9, it->get_id(), -1, SQLITE_STATIC);
+
 		if (sqlite3_step(t_stmt) == SQLITE_DONE) {
 
 			std::list<Track*>* trackList = it->getTracks();
@@ -151,10 +150,12 @@ void SqliteCacheDb::savePlaylists() {
 				Track* t = *trackIterator;
 
 				sqlite3_stmt* t_stmt = NULL;
-				sqlite3_prepare_v2(db, "INSERT INTO playlist_trackss (playlist_id, track_id) VALUES (?1, ?2)", -1, &t_stmt, NULL);
+				sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO playlist_trackss (playlist_id, track_id) VALUES (?1, ?2);", -1, &t_stmt, NULL);
 
 				sqlite3_bind_text(t_stmt, 1, t->get_id(), -1, SQLITE_STATIC);
 				sqlite3_bind_text(t_stmt, 2, it->get_id(), -1, SQLITE_STATIC);
+
+				sqlite3_bind_text(t_stmt, 3, t->get_id(), -1, SQLITE_STATIC);
 
 				if (sqlite3_step(t_stmt) != SQLITE_DONE) {
 					uDebugLog() << "Error while inserting track";
@@ -167,13 +168,11 @@ void SqliteCacheDb::savePlaylists() {
 
 void SqliteCacheDb::saveAlbums() {
 	std::list<Album>::iterator it;
-	int rc;
 	
 	for (it = albumlist.begin(); it != albumlist.end(); it++) {
 
-
-		sqlite3_stmt* t_stmt = NULL;
-		sqlite3_prepare_v2(db, "INSERT INTO albums (id, artist, title, genre, year, coverArt, duration, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)", -1, &t_stmt, NULL);
+		sqlite3_stmt* t_stmt;
+		sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO albums (id, artist, title, genre, year, coverArt, duration, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);" ,-1, &t_stmt, NULL);
 
 		sqlite3_bind_text(t_stmt, 1, it->get_id(), -1, SQLITE_STATIC);
 		sqlite3_bind_text(t_stmt, 2, it->get_artist(), -1, SQLITE_STATIC);
@@ -185,7 +184,9 @@ void SqliteCacheDb::saveAlbums() {
 		sqlite3_bind_int(t_stmt, 7, it->get_duration());
 		sqlite3_bind_int(t_stmt, 8, it->get_songCount());
 
-		if (sqlite3_step(t_stmt) == SQLITE_DONE) {
+		int retval = sqlite3_step(t_stmt);
+
+		if (retval == SQLITE_DONE) {
 			std::list<Track*>* trackList = it->getTracks();
 			std::list<Track*>::iterator trackIterator;
 
@@ -194,7 +195,7 @@ void SqliteCacheDb::saveAlbums() {
 				Track* t = *trackIterator;
 
 				sqlite3_stmt* t_stmt = NULL;
-				sqlite3_prepare_v2(db, "INSERT INTO albums (id, title, duration, bitRate, contentType, coverArt, genre, suffix, track, year, size) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)", -1, &t_stmt, NULL);
+				sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO tracks (id, title, duration, bitRate, contentType, coverArt, genre, suffix, track, year, size, albumId) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12);", -1, &t_stmt, NULL);
 
 				sqlite3_bind_text(t_stmt, 1, t->get_id(), -1, SQLITE_STATIC);
 				sqlite3_bind_text(t_stmt, 2, t->get_title(), -1, SQLITE_STATIC);
@@ -208,6 +209,8 @@ void SqliteCacheDb::saveAlbums() {
 				sqlite3_bind_text(t_stmt, 10, t->get_year(), -1, SQLITE_STATIC);
 				sqlite3_bind_int(t_stmt, 11, t->get_size());
 
+				sqlite3_bind_text(t_stmt, 12, it->get_id(), -1, SQLITE_STATIC);
+
 				if (sqlite3_step(t_stmt) != SQLITE_DONE) {
 					uDebugLog() << "Error while inserting track";
 				}
@@ -216,12 +219,10 @@ void SqliteCacheDb::saveAlbums() {
 	}
 }
 
-char* unsigned_to_signed_char(const unsigned char* bar) {
-	char buf[250];
-	memset(buf, '\0', sizeof(buf));
-	snprintf(buf, sizeof(buf), "%s", bar);
+void unsigned_to_signed_char(const unsigned char* bar, char* out) {
 
-	return buf;
+	std::string str(bar, bar + sizeof bar / sizeof bar[0]);
+	
 }
 
 std::list<Track> SqliteCacheDb::getTrackInfos(const char* id, const char* artist) {
@@ -232,22 +233,43 @@ std::list<Track> SqliteCacheDb::getTrackInfos(const char* id, const char* artist
 
 	std::list<Track> list;
 
+
 	while ((trk_rc = sqlite3_step(trk_stmt)) == SQLITE_ROW) {
 		Track t;
-		t.set_id(unsigned_to_signed_char(sqlite3_column_text(trk_stmt, 0)));
-		t.set_parentId(unsigned_to_signed_char(sqlite3_column_text(trk_stmt, 1)));
 
-		t.set_title(unsigned_to_signed_char(sqlite3_column_text(trk_stmt, 2)));
+		std::string tmp[7];
+
+		tmp[0].assign((char *)sqlite3_column_text(trk_stmt, 0));
+		t.set_id(tmp[0].c_str());
+
+		tmp[1].assign((char *)sqlite3_column_text(trk_stmt, 1));
+		t.set_parentId(tmp[1].c_str());
+
+		tmp[2].assign((char *)sqlite3_column_text(trk_stmt, 2));
+		t.set_title(tmp[2].c_str());
+
 		t.set_duration(sqlite3_column_int(trk_stmt, 3));
 		t.set_bitrate(sqlite3_column_int(trk_stmt, 4));
-		t.set_contentType(unsigned_to_signed_char(sqlite3_column_text(trk_stmt, 5)));
-		t.set_genre(unsigned_to_signed_char(sqlite3_column_text(trk_stmt, 6)));
-		t.set_suffix(unsigned_to_signed_char(sqlite3_column_text(trk_stmt, 7)));
+
+		tmp[3].assign((char *)sqlite3_column_text(trk_stmt, 5));
+		t.set_contentType(tmp[3].c_str());
+
+		tmp[4].assign((char *)sqlite3_column_text(trk_stmt, 6));
+		t.set_genre(tmp[4].c_str());
+
+		tmp[5].assign((char *)sqlite3_column_text(trk_stmt, 7));
+		t.set_suffix(tmp[5].c_str());
+
 		t.set_tracknumber(sqlite3_column_int(trk_stmt, 8));
-		t.set_year(unsigned_to_signed_char(sqlite3_column_text(trk_stmt, 9)));
+
+		tmp[6].assign((char *)sqlite3_column_text(trk_stmt, 9));
+		t.set_year(tmp[6].c_str());
+
 		t.set_size(sqlite3_column_int(trk_stmt, 10));
 
-		t.set_coverArt(unsigned_to_signed_char(sqlite3_column_text(trk_stmt, 11)));
+		tmp[7].assign((char *)sqlite3_column_text(trk_stmt, 11));
+		t.set_coverArt(tmp[7].c_str());
+
 		t.set_artist(artist);
 
 		list.push_back(t);
@@ -259,16 +281,30 @@ void SqliteCacheDb::getAllAlbumsFromCache() {
 	sqlite3_stmt *stmt;
 	int rc;
 	sqlite3_prepare_v2(db, "SELECT id, artist, title, genre, year, coverArt, duration, songCount FROM albums", -1, &stmt, NULL);
-
+	
 	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
 		Album a;
 
-		a.set_id(unsigned_to_signed_char(sqlite3_column_text(stmt, 0)));
-		a.set_artist(unsigned_to_signed_char(sqlite3_column_text(stmt, 1)));
-		a.set_title(unsigned_to_signed_char(sqlite3_column_text(stmt, 2)));
-		a.set_genre(unsigned_to_signed_char(sqlite3_column_text(stmt, 3)));
-		a.set_year(unsigned_to_signed_char(sqlite3_column_text(stmt, 4)));
-		a.set_coverArt(unsigned_to_signed_char(sqlite3_column_text(stmt, 5)));
+		std::string *tmp = new std::string[5];
+
+		tmp[0].assign((char *)sqlite3_column_text(stmt, 0));
+		a.set_id(tmp[0].c_str());
+
+		tmp[1].assign((char *)sqlite3_column_text(stmt, 1));
+		a.set_artist(tmp[1].c_str());
+
+		tmp[2].assign((char *)sqlite3_column_text(stmt, 2));
+		a.set_title(tmp[2].c_str());
+
+		tmp[3].assign((char *)sqlite3_column_text(stmt, 3));
+		a.set_genre(tmp[3].c_str());
+
+		tmp[4].assign((char *)sqlite3_column_text(stmt, 4));
+		a.set_year(tmp[4].c_str());
+
+		tmp[5].assign((char *)sqlite3_column_text(stmt, 5));
+		a.set_coverArt(tmp[5].c_str());
+
 		a.set_duration(sqlite3_column_int(stmt, 6));
 		a.set_songCount(sqlite3_column_int(stmt, 7));
 
@@ -286,14 +322,27 @@ void SqliteCacheDb::getAllPlaylistsFromCache() {
 
 	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
 		Playlist p;
+		std::string tmp[4];
 
-		p.set_id(unsigned_to_signed_char(sqlite3_column_text(stmt, 0)));
-		p.set_comment(unsigned_to_signed_char(sqlite3_column_text(stmt, 1)));
+		tmp[0].assign((char *)sqlite3_column_text(stmt, 0));
+		p.set_id(tmp[0].c_str());
+		
+		tmp[1].assign((char *)sqlite3_column_text(stmt, 1));
+		p.set_comment(tmp[1].c_str());
+
 		p.set_duration(sqlite3_column_int(stmt, 2));
-		p.set_coverArt(unsigned_to_signed_char(sqlite3_column_text(stmt, 3)));
-		p.set_isPublic(sqlite3_column_int(stmt, 4));
-		p.set_name(unsigned_to_signed_char(sqlite3_column_text(stmt, 5)));		
-		p.set_owner(unsigned_to_signed_char(sqlite3_column_text(stmt, 6)));
+
+		tmp[2].assign((char *)sqlite3_column_text(stmt, 3));
+		p.set_coverArt(tmp[2].c_str());
+
+		p.set_isPublic(sqlite3_column_int(stmt, 4) > 0 ? true : false);
+
+		tmp[3].assign((char *)sqlite3_column_text(stmt, 5));
+		p.set_name(tmp[3].c_str());
+
+		tmp[4].assign((char *)sqlite3_column_text(stmt, 6));
+		p.set_owner(tmp[4].c_str());
+
 		p.set_songcount(sqlite3_column_int(stmt, 7));
 
 		sqlite3_stmt *trk_pl_stmt;

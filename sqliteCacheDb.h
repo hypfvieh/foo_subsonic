@@ -31,7 +31,7 @@ private:
 
 	char* sql_table_create[SQL_TABLE_CREATE_SIZE] = {
 		"CREATE TABLE IF NOT EXISTS albums (id TEXT PRIMARY KEY, artist TEXT, title TEXT, genre TEXT, year TEXT, coverArt TEXT, duration INT, songCount INT)",
-		"CREATE TABLE IF NOT EXISTS tracks (id TEXT PRIMARY KEY, albumId TEXT, title TEXT, duration INT, bitrate INT, contentType TEXT, genre TEXT, suffix TEXT, track INT, year TEXT, size INT, coverArt TEXT, songCount INT)",
+		"CREATE TABLE IF NOT EXISTS tracks (id TEXT PRIMARY KEY, albumId TEXT, title TEXT, duration INT, bitrate INT, contentType TEXT, genre TEXT, suffix TEXT, track INT, year TEXT, size INT, coverArt TEXT)",
 		"CREATE TABLE IF NOT EXISTS coverart (id TEXT PRIMARY KEY, coverartData BLOB)",
 		"CREATE TABLE IF NOT EXISTS playlists (id TEXT PRIMARY KEY, comment TEXT, duration INT, coverArt TEXT, public INT, name TEXT, owner TEXT, songCount INT)",
 		"CREATE TABLE IF NOT EXISTS playlist_tracks (playlist_id TEXT, track_id TEXT, PRIMARY KEY (playlist_id, track_id))",

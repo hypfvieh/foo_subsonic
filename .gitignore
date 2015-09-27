@@ -4,3 +4,6 @@ Debug/*
 Debugtinyxml/*
 ipch/*
 x64/*
+sqlite3/Debug/
+sqlite3/*.c
+sqlite3/*.h

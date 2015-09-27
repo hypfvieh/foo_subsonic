@@ -9,6 +9,6 @@ I'm not a C++ programmer and just playing around here, so please be careful.
 
 ## Requirements:
 	* TinyXML (placed in ../tinyxml)
-	* SQLite3 amalgamation source (placed in ../sqlite3)
+	* SQLite3 amalgamation source (placed in sqlite3/)
 	* Foobar2000 SDK (placed in ../)
 	* MS Visual Studio (at least version 2010, I use 2015 Community Edition)

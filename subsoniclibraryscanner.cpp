@@ -5,7 +5,8 @@
 #include "ui.h"
 #include "simplehttpclient.h"
 #include "xmlhelper.h"
-#include "xmlcachedb.h"
+//#include "xmlcachedb.h"
+#include "sqliteCacheDb.h"
 #include "SimpleHttpClientConfigurator.h"
 
 #include <winhttp.h>
@@ -75,7 +76,7 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int
 
 					getAlbumTracks(&a);
 
-					XmlCacheDb::getInstance()->addAlbum(a);
+					SqliteCacheDb::getInstance()->addAlbum(a);
 
 					counter++;
 					p_status.set_progress(counter, offset + 1000);
@@ -153,7 +154,7 @@ void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status) {
 					// retrieve playlist entries
 					getPlaylistEntries(&p);
 
-					XmlCacheDb::getInstance()->addPlaylist(p);
+					SqliteCacheDb::getInstance()->addPlaylist(p);
 				}
 			}
 		}
@@ -211,7 +212,7 @@ void SubsonicLibraryScanner::getSearchResults(const char* urlParams) {
 				for (TiXmlElement* e = firstChild->FirstChildElement("song"); e != NULL; e = e->NextSiblingElement("song")) {
 					Track* t = new Track();
 					parseTrackInfo(e, t);
-					XmlCacheDb::getInstance()->addSearchResult(t);
+					SqliteCacheDb::getInstance()->addSearchResult(t);
 				}
 			}
 		}
@@ -256,14 +257,14 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 	int size = 2;//SUBSONIC_MAX_ALBUMLIST_SIZE;
 	int offset = 0;
 
-	XmlCacheDb::getInstance()->getAllAlbums()->clear(); // remove old entries first
+	SqliteCacheDb::getInstance()->getAllAlbums()->clear(); // remove old entries first
 
 	getAlbumList(p_status, size, offset);
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
 
 	// save our new results
-	XmlCacheDb::getInstance()->saveAlbums();
+	SqliteCacheDb::getInstance()->saveAlbums();
 
 	// signal the main window that the thread has done fetching
 	SendMessage(window, ID_CONTEXT_UPDATECATALOG_DONE, HIWORD(0), LOWORD(0));
@@ -278,13 +279,13 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 	Tries to retrieve all playlists stored for the current user (or being public).
 */
 void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window, threaded_process_status &p_status) {
-	XmlCacheDb::getInstance()->getAllPlaylists()->clear(); // remove old entries
+	SqliteCacheDb::getInstance()->getAllPlaylists()->clear(); // remove old entries
 	getPlaylists(p_status);
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
 
 	// save our new results
-	XmlCacheDb::getInstance()->savePlaylists();
+	SqliteCacheDb::getInstance()->savePlaylists();
 
 	// signal the main window that the thread has done fetching
 	SendMessage(window, ID_CONTEXT_UPDATEPLAYLIST_DONE, HIWORD(0), LOWORD(0));

@@ -93,7 +93,7 @@ public:
 	}	
 	
 	LRESULT OnSearchDone(UINT, WPARAM, LPARAM, BOOL&) {
-		std::list<Track*>* trackList = XmlCacheDb::getInstance()->getAllSearchResults()->getTracks();
+		std::list<Track*>* trackList = SqliteCacheDb::getInstance()->getAllSearchResults()->getTracks();
 
 		std::list<Track*>::iterator trackIterator;
 		for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
