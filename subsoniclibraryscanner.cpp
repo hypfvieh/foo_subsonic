@@ -5,7 +5,6 @@
 #include "ui.h"
 #include "simplehttpclient.h"
 #include "xmlhelper.h"
-//#include "xmlcachedb.h"
 #include "sqliteCacheDb.h"
 #include "SimpleHttpClientConfigurator.h"
 
@@ -42,6 +41,7 @@ BOOL SubsonicLibraryScanner::connectAndGet(TiXmlDocument* doc, const char* restM
 	else {
 		console::error("Error while configuring HTTP(s) connection");
 	}
+	return FALSE;
 }
 
 /*

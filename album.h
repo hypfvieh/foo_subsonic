@@ -5,10 +5,6 @@
 #include "track.h"
 #include <list>
 
-/*
-<album id="200005519" album="$5.98 E.P. Garage Days Re-Revisited" title="$5.98 E.P. Garage Days Re-Revisited [1987]" name="$5.98 E.P. Garage Days Re-Revisited" isDir="true" coverArt="200005519" songCount="5" duration="1495" artistId="100001438" parent="100001438" artist="Metallica" year="1987" genre="Heavy Metal"/>
-*/
-
 class Album : public CoreEntity {
 	STRING_MEMBER(id)
 	STRING_MEMBER(title)
@@ -21,6 +17,7 @@ class Album : public CoreEntity {
 	STRING_MEMBER(artist)
 	STRING_MEMBER(genre)
 	STRING_MEMBER(year)
+
 public:
 
 	void addTrack(Track* t) {
@@ -48,8 +45,8 @@ public:
 
 	~Album() {
 	}
-
 private:
 	std::list<Track*> albumTracks;
+
 };
 

@@ -116,9 +116,9 @@ public:
 		uSetWindowText(proxy_url, Preferences::proxy_url_data);
 
 		char tmp[20];
-		snprintf(tmp, sizeof(tmp), "%i", Preferences::connect_timeout_data.get_value());
+		snprintf(tmp, 20, "%i", Preferences::connect_timeout_data.get_value());
 		uSetWindowText(connect_timeout, tmp);
-		snprintf(tmp, sizeof(tmp), "%i", Preferences::coverart_size_data);
+		snprintf(tmp, 20, "%i", Preferences::coverart_size_data.get_value());
 		uSetWindowText(coverart_size, tmp);
 
 		//CheckRadioButton(IDC_RADIO_PROXY_NO, IDC_RADIO_PROXY_CUSTOM, IDC_RADIO)

@@ -6,35 +6,36 @@ SqliteCacheDb* SqliteCacheDb::instance = NULL;
 
 
 SqliteCacheDb::SqliteCacheDb() {
-	char *errMsg = 0;
-
 	pfc::string userDir = core_api::get_profile_path(); // save cache to user profile, if enabled
 	userDir += "\\foo_subsonic_cache.db";
 
 	userDir = userDir.replace("file://", "");
 
-	int rc = sqlite3_open_v2(userDir.c_str(), &db, SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-	if (rc) {
-		uDebugLog() << "Unable to open database: " << sqlite3_errmsg(db);
-		sqlite3_close(db);
-		db = NULL;
-	}
-	else {
-		// create tables if missing
-		for (unsigned int i = 0; i < SQL_TABLE_CREATE_SIZE; i++) {
-			rc = sqlite3_exec(db, sql_table_create[i], db_callback, 0, &errMsg);
-			if (rc != SQLITE_OK) {
-				uDebugLog() << "Unable to create table: " << errMsg;
-			}
-		}
+	db = new SQLite::Database(userDir.c_str(), SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+
+	if (db != NULL) {
+		createTableStructure();
 		getAllAlbumsFromCache();
 		getAllPlaylistsFromCache();
+
+	}
+}
+
+void SqliteCacheDb::createTableStructure() {
+	for (unsigned int i = 0; i < SQL_TABLE_CREATE_SIZE; i++) {
+		try {
+			db->exec(sql_table_create[i]);
+		}
+		catch (...) {
+			uDebugLog() << "Unable to create table: " << sql_table_create[i];
+		}
 	}
 }
 
 SqliteCacheDb::~SqliteCacheDb() {
 	if (db != NULL) {
-		sqlite3_close(db);
+		db->exec("VACUUM;"); // restructure cache, maybe we have to free some space
+		db->~Database();
 	}
 }
 
@@ -126,41 +127,31 @@ void SqliteCacheDb::savePlaylists() {
 	std::list<Playlist>::iterator it;
 
 	for (it = playlists.begin(); it != playlists.end(); it++) {
-		sqlite3_stmt* t_stmt = NULL;
-		sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO playlists (id, comment, coverArt, duration, public, name, owner, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);", -1, &t_stmt, NULL);
-
-		sqlite3_bind_text(t_stmt, 1, it->get_id(), -1, SQLITE_STATIC);
-		sqlite3_bind_text(t_stmt, 2, it->get_comment(), -1, SQLITE_STATIC);
-		sqlite3_bind_text(t_stmt, 3, it->get_coverArt(), -1, SQLITE_STATIC);
-		sqlite3_bind_text(t_stmt, 6, it->get_name(), -1, SQLITE_STATIC);
-		sqlite3_bind_text(t_stmt, 7, it->get_owner(), -1, SQLITE_STATIC);
 		
-		sqlite3_bind_int(t_stmt, 4, it->get_duration());
-		sqlite3_bind_int(t_stmt, 5, it->get_isPublic());
-		sqlite3_bind_int(t_stmt, 8, it->get_songcount());
 
-		sqlite3_bind_text(t_stmt, 9, it->get_id(), -1, SQLITE_STATIC);
+		SQLite::Statement query(*db, "INSERT OR REPLACE INTO playlists (id, comment, coverArt, duration, public, name, owner, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);");
 
-		if (sqlite3_step(t_stmt) == SQLITE_DONE) {
+		query.bind(1, it->get_id());
+		query.bind(2, it->get_comment());
+		query.bind(3, it->get_coverArt());
+		query.bind(4, it->get_duration());
+		query.bind(5, it->get_isPublic());
+		query.bind(6, it->get_name());
+		query.bind(7, it->get_owner());
+		query.bind(8, it->get_songcount());
 
+		while (query.executeStep()) {
 			std::list<Track*>* trackList = it->getTracks();
 			std::list<Track*>::iterator trackIterator;
 			for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
-				TiXmlElement* track = new TiXmlElement("Track");
 				Track* t = *trackIterator;
 
-				sqlite3_stmt* t_stmt = NULL;
-				sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO playlist_trackss (playlist_id, track_id) VALUES (?1, ?2);", -1, &t_stmt, NULL);
+				SQLite::Statement query_track(*db, "INSERT OR REPLACE INTO playlist_trackss (playlist_id, track_id) VALUES (?1, ?2);");
 
-				sqlite3_bind_text(t_stmt, 1, t->get_id(), -1, SQLITE_STATIC);
-				sqlite3_bind_text(t_stmt, 2, it->get_id(), -1, SQLITE_STATIC);
+				query_track.bind(1, t->get_id());
+				query_track.bind(2, it->get_id());
 
-				sqlite3_bind_text(t_stmt, 3, t->get_id(), -1, SQLITE_STATIC);
-
-				if (sqlite3_step(t_stmt) != SQLITE_DONE) {
-					uDebugLog() << "Error while inserting track";
-				}
-
+				query_track.exec();
 			}
 		}
 	}
@@ -171,22 +162,19 @@ void SqliteCacheDb::saveAlbums() {
 	
 	for (it = albumlist.begin(); it != albumlist.end(); it++) {
 
-		sqlite3_stmt* t_stmt;
-		sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO albums (id, artist, title, genre, year, coverArt, duration, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);" ,-1, &t_stmt, NULL);
+		SQLite::Statement query(*db, "INSERT OR REPLACE INTO albums (id, artist, title, genre, year, coverArt, duration, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);");
 
-		sqlite3_bind_text(t_stmt, 1, it->get_id(), -1, SQLITE_STATIC);
-		sqlite3_bind_text(t_stmt, 2, it->get_artist(), -1, SQLITE_STATIC);
-		sqlite3_bind_text(t_stmt, 3, it->get_title(), -1, SQLITE_STATIC);
-		sqlite3_bind_text(t_stmt, 4, it->get_genre(), -1, SQLITE_STATIC);
-		sqlite3_bind_text(t_stmt, 5, it->get_year(), -1, SQLITE_STATIC);
-		sqlite3_bind_text(t_stmt, 6, it->get_coverArt(), -1, SQLITE_STATIC);
+		query.bind(1, it->get_id());
+		query.bind(2, it->get_artist());
+		query.bind(3, it->get_title());
+		query.bind(4, it->get_genre());
+		query.bind(5, it->get_year());
+		query.bind(6, it->get_coverArt());
+		query.bind(7, it->get_duration());
+		query.bind(8, it->get_songCount());
 
-		sqlite3_bind_int(t_stmt, 7, it->get_duration());
-		sqlite3_bind_int(t_stmt, 8, it->get_songCount());
-
-		int retval = sqlite3_step(t_stmt);
-
-		if (retval == SQLITE_DONE) {
+		
+		if (query.exec() >= 1) {
 			std::list<Track*>* trackList = it->getTracks();
 			std::list<Track*>::iterator trackIterator;
 
@@ -194,24 +182,22 @@ void SqliteCacheDb::saveAlbums() {
 				TiXmlElement* track = new TiXmlElement("Track");
 				Track* t = *trackIterator;
 
-				sqlite3_stmt* t_stmt = NULL;
-				sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO tracks (id, title, duration, bitRate, contentType, coverArt, genre, suffix, track, year, size, albumId) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12);", -1, &t_stmt, NULL);
+				SQLite::Statement query_track(*db, "INSERT OR REPLACE INTO tracks (id, title, duration, bitRate, contentType, coverArt, genre, suffix, track, year, size, albumId) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12);");
 
-				sqlite3_bind_text(t_stmt, 1, t->get_id(), -1, SQLITE_STATIC);
-				sqlite3_bind_text(t_stmt, 2, t->get_title(), -1, SQLITE_STATIC);
-				sqlite3_bind_int(t_stmt, 3, t->get_duration());
-				sqlite3_bind_int(t_stmt, 4, t->get_bitrate());
-				sqlite3_bind_text(t_stmt, 5, t->get_contentType(), -1, SQLITE_STATIC);
-				sqlite3_bind_text(t_stmt, 6, t->get_coverArt(), -1, SQLITE_STATIC);
-				sqlite3_bind_text(t_stmt, 7, t->get_genre(), -1, SQLITE_STATIC);
-				sqlite3_bind_text(t_stmt, 8, t->get_suffix(), -1, SQLITE_STATIC);
-				sqlite3_bind_int(t_stmt, 9, t->get_tracknumber());
-				sqlite3_bind_text(t_stmt, 10, t->get_year(), -1, SQLITE_STATIC);
-				sqlite3_bind_int(t_stmt, 11, t->get_size());
+				query_track.bind(1, t->get_id());
+				query_track.bind(2, t->get_title());
+				query_track.bind(3, t->get_duration());
+				query_track.bind(4, t->get_bitrate());
+				query_track.bind(5, t->get_contentType());
+				query_track.bind(6, t->get_coverArt());
+				query_track.bind(7, t->get_genre());
+				query_track.bind(8, t->get_suffix());
+				query_track.bind(9, t->get_tracknumber());
+				query_track.bind(10, t->get_year());
+				query_track.bind(11, t->get_size());
+				query_track.bind(12, it->get_id());
 
-				sqlite3_bind_text(t_stmt, 12, it->get_id(), -1, SQLITE_STATIC);
-
-				if (sqlite3_step(t_stmt) != SQLITE_DONE) {
+				if (query_track.exec() != 1) {				
 					uDebugLog() << "Error while inserting track";
 				}
 			}
@@ -219,140 +205,144 @@ void SqliteCacheDb::saveAlbums() {
 	}
 }
 
-void unsigned_to_signed_char(const unsigned char* bar, char* out) {
 
-	std::string str(bar, bar + sizeof bar / sizeof bar[0]);
-	
-}
-
-std::list<Track> SqliteCacheDb::getTrackInfos(const char* id, const char* artist) {
-	sqlite3_stmt *trk_stmt;
-	int trk_rc;
-	sqlite3_prepare_v2(db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt FROM tracks WHERE albumId = ?1", -1, &trk_stmt, NULL);
-	sqlite3_bind_text(trk_stmt, 1, id, -1, SQLITE_STATIC);
-
-	std::list<Track> list;
+void SqliteCacheDb::parseTrackInfo(Track *t, SQLite::Statement *query_track) {
+	t->set_id(query_track->getColumn(0));
+	t->set_parentId(query_track->getColumn(1));
+	t->set_title(query_track->getColumn(2));
+	t->set_contentType(query_track->getColumn(5));
+	t->set_genre(query_track->getColumn(6));
+	t->set_suffix(query_track->getColumn(7));
+	t->set_year(query_track->getColumn(9));
+	t->set_coverArt(query_track->getColumn(11));
 
 
-	while ((trk_rc = sqlite3_step(trk_stmt)) == SQLITE_ROW) {
-		Track t;
-
-		std::string tmp[7];
-
-		tmp[0].assign((char *)sqlite3_column_text(trk_stmt, 0));
-		t.set_id(tmp[0].c_str());
-
-		tmp[1].assign((char *)sqlite3_column_text(trk_stmt, 1));
-		t.set_parentId(tmp[1].c_str());
-
-		tmp[2].assign((char *)sqlite3_column_text(trk_stmt, 2));
-		t.set_title(tmp[2].c_str());
-
-		t.set_duration(sqlite3_column_int(trk_stmt, 3));
-		t.set_bitrate(sqlite3_column_int(trk_stmt, 4));
-
-		tmp[3].assign((char *)sqlite3_column_text(trk_stmt, 5));
-		t.set_contentType(tmp[3].c_str());
-
-		tmp[4].assign((char *)sqlite3_column_text(trk_stmt, 6));
-		t.set_genre(tmp[4].c_str());
-
-		tmp[5].assign((char *)sqlite3_column_text(trk_stmt, 7));
-		t.set_suffix(tmp[5].c_str());
-
-		t.set_tracknumber(sqlite3_column_int(trk_stmt, 8));
-
-		tmp[6].assign((char *)sqlite3_column_text(trk_stmt, 9));
-		t.set_year(tmp[6].c_str());
-
-		t.set_size(sqlite3_column_int(trk_stmt, 10));
-
-		tmp[7].assign((char *)sqlite3_column_text(trk_stmt, 11));
-		t.set_coverArt(tmp[7].c_str());
-
-		t.set_artist(artist);
-
-		list.push_back(t);
-	}
-	return list;
+	t->set_duration(query_track->getColumn(3));
+	t->set_bitrate(query_track->getColumn(4));
+	t->set_tracknumber(query_track->getColumn(8));
+	t->set_size(query_track->getColumn(10));
 }
 
 void SqliteCacheDb::getAllAlbumsFromCache() {
-	sqlite3_stmt *stmt;
-	int rc;
-	sqlite3_prepare_v2(db, "SELECT id, artist, title, genre, year, coverArt, duration, songCount FROM albums", -1, &stmt, NULL);
 	
-	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+	SQLite::Statement query(*db, "SELECT id, artist, title, genre, year, coverArt, duration, songCount FROM albums");
+
+	while (query.executeStep()) {
 		Album a;
+		a.set_id(query.getColumn(0));
+		a.set_artist(query.getColumn(1));
+		a.set_title(query.getColumn(2));
+		a.set_genre(query.getColumn(3));
+		a.set_year(query.getColumn(4));
+		a.set_coverArt(query.getColumn(5));
+		a.set_duration(query.getColumn(6));
+		a.set_songCount(query.getColumn(7));
 
-		std::string *tmp = new std::string[5];
+		SQLite::Statement query_track(*db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt FROM tracks WHERE albumId = ?1");
+		query_track.bind(1, a.get_id());
 
-		tmp[0].assign((char *)sqlite3_column_text(stmt, 0));
-		a.set_id(tmp[0].c_str());
+		while (query_track.executeStep()) {
+			Track* t = new Track();
+			parseTrackInfo(t, &query_track);
+			t->set_artist(a.get_artist());
+			a.addTrack(t);
 
-		tmp[1].assign((char *)sqlite3_column_text(stmt, 1));
-		a.set_artist(tmp[1].c_str());
-
-		tmp[2].assign((char *)sqlite3_column_text(stmt, 2));
-		a.set_title(tmp[2].c_str());
-
-		tmp[3].assign((char *)sqlite3_column_text(stmt, 3));
-		a.set_genre(tmp[3].c_str());
-
-		tmp[4].assign((char *)sqlite3_column_text(stmt, 4));
-		a.set_year(tmp[4].c_str());
-
-		tmp[5].assign((char *)sqlite3_column_text(stmt, 5));
-		a.set_coverArt(tmp[5].c_str());
-
-		a.set_duration(sqlite3_column_int(stmt, 6));
-		a.set_songCount(sqlite3_column_int(stmt, 7));
-
-		std::list<Track> list = getTrackInfos(a.get_id(), a.get_artist());
-		
-		a.addTracks(list);
+		}
 		albumlist.push_back(a);
-	}	
+	}
+
 }
 
 void SqliteCacheDb::getAllPlaylistsFromCache() {
-	sqlite3_stmt *stmt;
-	int rc;
-	sqlite3_prepare_v2(db, "SELECT id, comment, duration, coverArt, public, name, owner, songCount FROM playlists", -1, &stmt, NULL);
 
-	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+	SQLite::Statement query(*db, "SELECT id, comment, duration, coverArt, public, name, owner, songCount FROM playlists");
+
+	while (query.executeStep()) {
 		Playlist p;
-		std::string tmp[4];
 
-		tmp[0].assign((char *)sqlite3_column_text(stmt, 0));
-		p.set_id(tmp[0].c_str());
-		
-		tmp[1].assign((char *)sqlite3_column_text(stmt, 1));
-		p.set_comment(tmp[1].c_str());
+		int i_isPublic = query.getColumn(4);
+		bool isPublic = i_isPublic > 0 ? TRUE : FALSE;
 
-		p.set_duration(sqlite3_column_int(stmt, 2));
+		p.set_id(query.getColumn(0));
+		p.set_comment(query.getColumn(1));
+		p.set_duration(query.getColumn(2));
+		p.set_coverArt(query.getColumn(3));
+		p.set_isPublic(isPublic);
+		p.set_name(query.getColumn(5));
+		p.set_owner(query.getColumn(6));
+		p.set_songcount(query.getColumn(7));
 
-		tmp[2].assign((char *)sqlite3_column_text(stmt, 3));
-		p.set_coverArt(tmp[2].c_str());
+		SQLite::Statement query_track(*db, "SELECT track_id FROM playlist_tracks WHERE playlist_id = ?1");
+		query_track.bind(1, p.get_id());
 
-		p.set_isPublic(sqlite3_column_int(stmt, 4) > 0 ? true : false);
+		while (query_track.executeStep()) {
 
-		tmp[3].assign((char *)sqlite3_column_text(stmt, 5));
-		p.set_name(tmp[3].c_str());
+			SQLite::Statement query_track(*db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt FROM tracks WHERE albumId = ?1");
+			query_track.bind(1, p.get_id());
 
-		tmp[4].assign((char *)sqlite3_column_text(stmt, 6));
-		p.set_owner(tmp[4].c_str());
+			while (query_track.executeStep()) {
+				Track* t = new Track();
+				parseTrackInfo(t, &query_track);
 
-		p.set_songcount(sqlite3_column_int(stmt, 7));
+				SQLite::Statement query_artist(*db, "SELECT artist FROM albums WHERE id = ?1 LIMIT 1");
+				query_artist.bind(1, t->get_parentId());
 
-		sqlite3_stmt *trk_pl_stmt;
-		int trk_pl_rc;
-		sqlite3_prepare_v2(db, "SELECT track_id FROM playlist_tracks WHERE playlist_id = ?1", -1, &trk_pl_stmt, NULL);
-		sqlite3_bind_text(trk_pl_stmt, 1, p.get_id(), -1, SQLITE_STATIC);
-		while ((trk_pl_rc = sqlite3_step(trk_pl_stmt)) == SQLITE_ROW) {
-			std::list<Track> list = getTrackInfos(p.get_id(), p.get_name()); // TODO: get artist name ... funktioniert nicht mit playlists
-			p.addTracks(list);
+				if (query_artist.executeStep()) {
+					t->set_artist(query_artist.getColumn(1));
+				}
+
+				
+				p.addTrack(t);
+			}			
 			playlists.push_back(p);
 		}
+	}	
+}
+
+void SqliteCacheDb::addCoverArtToCache(const char* coverArtId, const void * coverArtData, unsigned int dataLength) {
+	if (dataLength > 0 && coverArtId != NULL && strlen(coverArtId) > 0) {
+		SQLite::Statement query_coverArt(*db, "INSERT OR REPLACE INTO coverart (id, coverArtData) VALUES (?1, ?2)");
+
+		query_coverArt.bind(1, coverArtId);
+		query_coverArt.bind(2, coverArtData, dataLength);
+
+		if (query_coverArt.exec() < 1) {
+			uDebugLog() << "Error inserting coverArtData";
+		}
 	}
+}
+
+void SqliteCacheDb::getCoverArtById(const char* coverArtId, char* &coverArtData, unsigned int &dataLength) {
+	SQLite::Statement query_coverArt(*db, "SELECT coverArtData FROM coverart WHERE id = ?1 LIMIT 1");
+	dataLength = 0;
+	query_coverArt.bind(1, coverArtId);
+
+	if (query_coverArt.executeStep()) {
+
+		dataLength = query_coverArt.getColumn(0).getBytes();
+
+		char *tmpBuffer = new char[dataLength];
+		memcpy(tmpBuffer, query_coverArt.getColumn(0).getBlob(), dataLength);
+
+		delete[] coverArtData;
+		coverArtData = tmpBuffer;
+	}
+}
+
+void SqliteCacheDb::getCoverArtByTrackId(const char* trackId, std::string &out_coverId, char* &coverArtData, unsigned int &dataLength) {
+	SQLite::Statement query_coverId(*db, "SELECT coverArt FROM tracks WHERE id = ?1 LIMIT 1");
+
+	query_coverId.bind(1, trackId);
+	if (query_coverId.executeStep()) {
+		getCoverArtById(query_coverId.getColumn(0), coverArtData, dataLength);
+
+		out_coverId.append(query_coverId.getColumn(0).getText());
+	}
+}
+
+
+void SqliteCacheDb::clearCoverArtCache() {
+	db->exec("DROP TABLE coverart;");
+	createTableStructure();
+	db->exec("VACUUM;");
 }

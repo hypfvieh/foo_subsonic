@@ -9,7 +9,8 @@
 class SqliteCacheDb {
 
 private:
-	sqlite3 *db = NULL;
+	//sqlite3 *db = NULL;
+	SQLite::Database *db;
 
 	std::list<Album> albumlist;
 	std::list<Playlist> playlists;
@@ -27,7 +28,8 @@ private:
 	void getAllPlaylistsFromCache();
 
 	void addToUrlMap(Track* t);
-	std::list<Track> SqliteCacheDb::getTrackInfos(const char* id, const char* artist);
+
+	void SqliteCacheDb::parseTrackInfo(Track *t, SQLite::Statement *query_track);
 
 	char* sql_table_create[SQL_TABLE_CREATE_SIZE] = {
 		"CREATE TABLE IF NOT EXISTS albums (id TEXT PRIMARY KEY, artist TEXT, title TEXT, genre TEXT, year TEXT, coverArt TEXT, duration INT, songCount INT)",
@@ -41,9 +43,7 @@ private:
 		"CREATE INDEX IF NOT EXISTS playlist_id_index ON playlists(id)"
 	};
 	
-	static int db_callback(void *NotUsed, int argc, char **argv, char **azColName) {
-		    return 0;		
-	}
+	void createTableStructure();
 
 public:
 
@@ -65,6 +65,11 @@ public:
 	void addAlbum(Album a);
 	void addPlaylist(Playlist p);
 
+	void addCoverArtToCache(const char* coverArtId, const void * coverArtData, unsigned int dataLength);
+	void getCoverArtById(const char* coverArtId, char* &coverArtData, unsigned int &dataLength);
+	void getCoverArtByTrackId(const char* trackId, std::string &out_coverId, char* &coverArtData, unsigned int &dataLength);
+
 	bool getTrackDetailsByUrl(const char* url, Track &t);
 
+	void clearCoverArtCache();
 };

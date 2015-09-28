@@ -131,6 +131,9 @@
     <ClInclude Include="sqliteCacheDb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SQLiteCpp\SQLiteCpp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="readme.txt" />

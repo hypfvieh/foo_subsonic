@@ -47,7 +47,7 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)..\sqlite3;..\..\wtl\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\sqlite3\SQLiteCpp;$(ProjectDir)..\sqlite3;..\..\wtl\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -61,6 +61,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <CompileAsWinRT>false</CompileAsWinRT>
+      <AdditionalIncludeDirectories>$(ProjectDir)sqlite3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -135,6 +136,7 @@
     <ClInclude Include="simplehttpclient.h" />
     <ClInclude Include="SimpleHttpClientConfigurator.h" />
     <ClInclude Include="sqliteCacheDb.h" />
+    <ClInclude Include="SQLiteCpp\SQLiteCpp.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="subsoniclibraryscanner.h" />
     <ClInclude Include="track.h" />

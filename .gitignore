@@ -1,4 +1,5 @@
 foo_subsonic.sdf
+foo_subsonic.opensdf
 .vs/*
 Debug/*
 Debugtinyxml/*
@@ -6,4 +7,6 @@ ipch/*
 x64/*
 sqlite3/Debug/
 sqlite3/*.c
+sqlite3/*.cpp
 sqlite3/*.h
+sqlite3/SQLiteCpp/*.h

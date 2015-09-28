@@ -10,7 +10,8 @@
 #include "meta.h"
 #include "../SDK/foobar2000.h"
 #include "../tinyxml/tinyxml.h"
-#include "sqlite3/sqlite3.h"
+//#include "sqlite3/sqlite3.h"
+#include "sqlite3/SQLiteCpp/SQLiteCpp.h"
 #include "../ATLHelpers/ATLHelpers.h"
 #include "Preferences.h"
 

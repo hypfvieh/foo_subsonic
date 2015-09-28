@@ -1,5 +1,6 @@
 #include "foo_subsonic.h"
 #include "FakeAlbumArtExtractor.h"
+#include "sqliteCacheDb.h"
 
 const GUID FakeAlbumArtExtractor::class_guid = { 0xe1b99b8c, 0x518a, 0x4ea3,{ 0x89, 0x33, 0xf4, 0xd8, 0x7d, 0x3e, 0x68, 0x13 } };
 
@@ -48,28 +49,36 @@ pfc::string8 FakeAlbumArtExtractor::extractPathId(const char* p_path) {
 }
 
 album_art_extractor_instance_v2::ptr FakeAlbumArtExtractor::open_v2(file_ptr p_filehint, const char *p_path, abort_callback &p_abort) {
-	SimpleHttpClientConfig config;
-	SimpleHttpClientConfigurator::createSimpleHttpClientConfigFromPreferences(config);
-	SimpleHttpClient client = SimpleHttpClient(config);
-
+	
 	char* buffer = NULL;
 	size_t buffSize = 0;
 
-	pfc::string8 id = extractPathId(p_path);
+	pfc::string8 trackId = extractPathId(p_path);
+	
+	std::string coverId;
+	SqliteCacheDb::getInstance()->getCoverArtByTrackId(trackId.c_str(), coverId, buffer, buffSize);
 
-	pfc::string8 artId = "id=";
-	artId << SimpleHttpClientConfigurator::url_encode(id);
+	if (buffSize == 0) { // no cached image, retrive new
+		SimpleHttpClientConfig config;
+		SimpleHttpClientConfigurator::createSimpleHttpClientConfigFromPreferences(config);
+		SimpleHttpClient client = SimpleHttpClient(config);
 
-	if (Preferences::coverart_resize) { // User wants to 'save bandwidth', add resize flag
-		artId << "&size=" << Preferences::coverart_size_data;
+
+		pfc::string8 artId = "id=";
+		artId << SimpleHttpClientConfigurator::url_encode(trackId);
+
+		if (Preferences::coverart_resize) { // User wants to 'save bandwidth', add resize flag
+			artId << "&size=" << Preferences::coverart_size_data;
+		}
+
+		pfc::string8 url = SimpleHttpClientConfigurator::buildRequestUrl("getCoverArt", artId);
+
+		client.open(url.c_str());
+		client.send_request(buffer, buffSize);
+		if (buffSize > 0 && !coverId.empty()) { // store coverart to cachedb
+			SqliteCacheDb::getInstance()->addCoverArtToCache(coverId.c_str(), buffer, buffSize);
+		}
 	}
-
-	pfc::string8 url = SimpleHttpClientConfigurator::buildRequestUrl("getCoverArt", artId);
-
-	client.open(url.c_str());
-	client.send_request(buffer, buffSize);
-
-	dbg(buffer, buffSize);
 
 	if (buffSize <= 0) {
 		throw exception_album_art_not_found();
