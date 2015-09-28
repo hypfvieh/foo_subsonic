@@ -29,6 +29,9 @@
 #define IDC_CHECK2                      1041
 #define IDC_CHK_RESIZECOVERART          1041
 #define IDC_TXT_COVERARTSIZE            1042
+#define IDC_BTN_RESET_CACHE             1043
+#define IDC_BUTTON2                     1044
+#define IDC_BTN_RESET_COVERART_CACHE    1044
 #define IDC_CONNECT_URL_DATA            1047
 #define IDC_USERNAME_DATA               1049
 #define IDC_PASSWORD_DATA               1050
@@ -42,7 +45,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        112
 #define _APS_NEXT_COMMAND_VALUE         40008
-#define _APS_NEXT_CONTROL_VALUE         1043
+#define _APS_NEXT_CONTROL_VALUE         1045
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

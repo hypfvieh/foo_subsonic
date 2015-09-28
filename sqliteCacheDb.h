@@ -9,8 +9,7 @@
 class SqliteCacheDb {
 
 private:
-	//sqlite3 *db = NULL;
-	SQLite::Database *db;
+	SQLite::Database *db = NULL;
 
 	std::list<Album> albumlist;
 	std::list<Playlist> playlists;
@@ -44,7 +43,7 @@ private:
 	};
 	
 	void createTableStructure();
-
+	
 public:
 
 	static SqliteCacheDb* getInstance() {
@@ -72,4 +71,5 @@ public:
 	bool getTrackDetailsByUrl(const char* url, Track &t);
 
 	void clearCoverArtCache();
+	void clearCache();
 };

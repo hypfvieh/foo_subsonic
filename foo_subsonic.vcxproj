@@ -113,7 +113,6 @@
     <ClCompile Include="sqliteCacheDb.cpp" />
     <ClCompile Include="subsoniclibraryscanner.cpp" />
     <ClCompile Include="ui.cpp" />
-    <ClCompile Include="xmlcachedb.cpp" />
     <ClCompile Include="xmlhelper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -141,7 +140,6 @@
     <ClInclude Include="subsoniclibraryscanner.h" />
     <ClInclude Include="track.h" />
     <ClInclude Include="ui.h" />
-    <ClInclude Include="xmlcachedb.h" />
     <ClInclude Include="xmlhelper.h" />
   </ItemGroup>
   <ItemGroup>

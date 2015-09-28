@@ -19,9 +19,12 @@ SqliteCacheDb::SqliteCacheDb() {
 		getAllPlaylistsFromCache();
 
 	}
+	
 }
 
 void SqliteCacheDb::createTableStructure() {
+	if (db == NULL) return;
+
 	for (unsigned int i = 0; i < SQL_TABLE_CREATE_SIZE; i++) {
 		try {
 			db->exec(sql_table_create[i]);
@@ -124,6 +127,7 @@ bool SqliteCacheDb::getTrackDetailsByUrl(const char* url, Track &t) {
 }
 
 void SqliteCacheDb::savePlaylists() {
+	if (db == NULL) return;
 	std::list<Playlist>::iterator it;
 
 	for (it = playlists.begin(); it != playlists.end(); it++) {
@@ -158,6 +162,7 @@ void SqliteCacheDb::savePlaylists() {
 }
 
 void SqliteCacheDb::saveAlbums() {
+	if (db == NULL) return;
 	std::list<Album>::iterator it;
 	
 	for (it = albumlist.begin(); it != albumlist.end(); it++) {
@@ -224,7 +229,7 @@ void SqliteCacheDb::parseTrackInfo(Track *t, SQLite::Statement *query_track) {
 }
 
 void SqliteCacheDb::getAllAlbumsFromCache() {
-	
+	if (db == NULL) return;
 	SQLite::Statement query(*db, "SELECT id, artist, title, genre, year, coverArt, duration, songCount FROM albums");
 
 	while (query.executeStep()) {
@@ -254,7 +259,7 @@ void SqliteCacheDb::getAllAlbumsFromCache() {
 }
 
 void SqliteCacheDb::getAllPlaylistsFromCache() {
-
+	if (db == NULL) return;
 	SQLite::Statement query(*db, "SELECT id, comment, duration, coverArt, public, name, owner, songCount FROM playlists");
 
 	while (query.executeStep()) {
@@ -300,6 +305,8 @@ void SqliteCacheDb::getAllPlaylistsFromCache() {
 }
 
 void SqliteCacheDb::addCoverArtToCache(const char* coverArtId, const void * coverArtData, unsigned int dataLength) {
+	if (db == NULL) return;
+
 	if (dataLength > 0 && coverArtId != NULL && strlen(coverArtId) > 0) {
 		SQLite::Statement query_coverArt(*db, "INSERT OR REPLACE INTO coverart (id, coverArtData) VALUES (?1, ?2)");
 
@@ -313,6 +320,8 @@ void SqliteCacheDb::addCoverArtToCache(const char* coverArtId, const void * cove
 }
 
 void SqliteCacheDb::getCoverArtById(const char* coverArtId, char* &coverArtData, unsigned int &dataLength) {
+	if (db == NULL) return;
+
 	SQLite::Statement query_coverArt(*db, "SELECT coverArtData FROM coverart WHERE id = ?1 LIMIT 1");
 	dataLength = 0;
 	query_coverArt.bind(1, coverArtId);
@@ -330,6 +339,8 @@ void SqliteCacheDb::getCoverArtById(const char* coverArtId, char* &coverArtData,
 }
 
 void SqliteCacheDb::getCoverArtByTrackId(const char* trackId, std::string &out_coverId, char* &coverArtData, unsigned int &dataLength) {
+	if (db == NULL) return;
+
 	SQLite::Statement query_coverId(*db, "SELECT coverArt FROM tracks WHERE id = ?1 LIMIT 1");
 
 	query_coverId.bind(1, trackId);
@@ -342,7 +353,22 @@ void SqliteCacheDb::getCoverArtByTrackId(const char* trackId, std::string &out_c
 
 
 void SqliteCacheDb::clearCoverArtCache() {
+	if (db == NULL) return;
+
 	db->exec("DROP TABLE coverart;");
-	createTableStructure();
 	db->exec("VACUUM;");
+	createTableStructure();	
+}
+
+void SqliteCacheDb::clearCache() {
+	if (db == NULL) return;
+
+	db->exec("DROP TABLE coverart;");
+	db->exec("DROP TABLE albums;");
+	db->exec("DROP TABLE tracks;");
+	db->exec("DROP TABLE playlists;");
+	db->exec("DROP TABLE playlist_tracks;");
+
+	db->exec("VACCUM");
+	createTableStructure();
 }

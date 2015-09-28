@@ -1,5 +1,6 @@
 #include "foo_subsonic.h"
 #include "preferences.h"
+#include "sqliteCacheDb.h"
 
 namespace Preferences {
 	const GUID guid_connect_url_data = { 0x4dcf833, 0x78b7, 0x4549,{ 0xaf, 0x34, 0xfd, 0xd3, 0x9c, 0x13, 0x9, 0xde } };
@@ -86,6 +87,8 @@ public:
 		COMMAND_HANDLER_EX(IDC_CHK_RESIZECOVERART, EN_UPDATE, OnChanged)
 		COMMAND_HANDLER_EX(IDC_CHK_DLCOVERART, EN_UPDATE, OnChanged)
 		COMMAND_HANDLER_EX(IDC_TXT_COVERARTSIZE, EN_UPDATE, OnChanged)
+		COMMAND_HANDLER(IDC_BTN_RESET_COVERART_CACHE, BN_CLICKED, OnBnClickedBtnResetCoverartCache)
+		COMMAND_HANDLER(IDC_BTN_RESET_CACHE, BN_CLICKED, OnBnClickedBtnResetCache)
 	END_MSG_MAP()
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
@@ -250,6 +253,18 @@ public:
 		on_change();
 	}
 	
+	LRESULT OnBnClickedBtnResetCoverartCache(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+	{
+		SqliteCacheDb::getInstance()->clearCoverArtCache();
+		return 0;
+	}
+
+	LRESULT OnBnClickedBtnResetCache(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+	{		
+		SqliteCacheDb::getInstance()->clearCache();
+
+		return 0;
+	}
 };
 
 class PreferencesPage : public preferences_page_impl<PreferencesPageInstance> {

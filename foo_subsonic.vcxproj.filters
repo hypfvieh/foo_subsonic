@@ -39,9 +39,6 @@
     <ClCompile Include="playlistQueryThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="xmlcachedb.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="xmlhelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -96,9 +93,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="playlist.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="xmlcachedb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="xmlhelper.h">
