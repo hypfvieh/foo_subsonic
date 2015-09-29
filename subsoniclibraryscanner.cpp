@@ -83,8 +83,7 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int
 				}
 				// recurse until empty list is returned
 				offset += SUBSONIC_MAX_ALBUMLIST_SIZE;
-				// TODO: Later do recursing!    
-				// getAlbumList(p_abort, albumList, 500, offset);
+				 getAlbumList(p_status, size, offset);
 
 			}
 		}
@@ -253,8 +252,7 @@ void SubsonicLibraryScanner::parsingError(const char* message, const char* errCo
 */
 void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_status &p_status) {
 	
-	// TODO: increase after debug (max is 500)
-	int size = 2;//SUBSONIC_MAX_ALBUMLIST_SIZE;
+	int size = SUBSONIC_MAX_ALBUMLIST_SIZE;
 	int offset = 0;
 
 	SqliteCacheDb::getInstance()->getAllAlbums()->clear(); // remove old entries first
