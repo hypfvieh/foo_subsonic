@@ -344,6 +344,7 @@ void SqliteCacheDb::getCoverArtByTrackId(const char* trackId, std::string &out_c
 	SQLite::Statement query_coverId(*db, "SELECT coverArt FROM tracks WHERE id = ?1 LIMIT 1");
 
 	query_coverId.bind(1, trackId);
+
 	if (query_coverId.executeStep()) {
 		getCoverArtById(query_coverId.getColumn(0), coverArtData, dataLength);
 
@@ -363,12 +364,20 @@ void SqliteCacheDb::clearCoverArtCache() {
 void SqliteCacheDb::clearCache() {
 	if (db == NULL) return;
 
+	SQLite::Transaction transaction(*db);
 	db->exec("DROP TABLE coverart;");
 	db->exec("DROP TABLE albums;");
+	db->exec("DROP TABLE playlist_tracks;");
 	db->exec("DROP TABLE tracks;");
 	db->exec("DROP TABLE playlists;");
-	db->exec("DROP TABLE playlist_tracks;");
+	
+	transaction.commit();	
 
-	db->exec("VACCUM");
+	db->exec("VACUUM;");
 	createTableStructure();
+
+	albumlist.clear();
+	playlists.clear();
+	urlToTrackMap.clear();
+
 }

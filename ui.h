@@ -2,20 +2,8 @@
 
 #include "foo_subsonic.h"
 #include "subsoniclibraryscanner.h"
+#include "consts.h"
 
-#define ID_CONTEXT_UPDATECATALOG			WM_USER + 101
-#define ID_CONTEXT_UPDATEPLAYLIST			WM_USER + 102
-#define ID_CONTEXT_SEARCHDIALOG 			WM_USER + 103
-
-#define ID_CONTEXT_UPDATECATALOG_DONE       WM_APP  + 201
-#define ID_CONTEXT_UPDATEPLAYLIST_DONE      WM_APP  + 202
-
-#define ID_SEARCH_DONE						WM_APP  + 301
-
-#define IDC_TREEVIEWCTRL					2053
-
-#define TREE_ROOT_CATALOG					1
-#define TREE_ROOT_PLAYLISTS					2
 
 namespace foo_subsonic {
 	class CSubsonicUi : public CWindowImpl<CSubsonicUi, CTreeViewCtrlEx>, public ui_element_instance {
@@ -25,7 +13,6 @@ namespace foo_subsonic {
 		void initialize_window(HWND parent) { WIN32_OP(Create(parent, 0, 0, 0, WS_EX_STATICEDGE) != NULL); }	
 	
 		BEGIN_MSG_MAP(CSubsonicUi)
-			//MESSAGE_HANDLER(WM_LBUTTONDOWN, OnLButtonDown);
 			MESSAGE_HANDLER(WM_LBUTTONDBLCLK, OnLButtonDblClick);
 			MESSAGE_HANDLER(WM_RBUTTONDOWN, OnContextMenu);
 			MESSAGE_HANDLER(WM_CREATE, OnCreate);
@@ -36,16 +23,18 @@ namespace foo_subsonic {
 			COMMAND_ID_HANDLER(ID_CONTEXT_UPDATEPLAYLIST, OnContextPlaylistUpdate);
 			COMMAND_ID_HANDLER(ID_CONTEXT_SEARCHDIALOG, OnSearchDialogShow);
 			COMMAND_ID_HANDLER(TVN_BEGINDRAG, foo);
+
 			MSG_WM_MOUSEMOVE(OnMouseMove);
 			MSG_WM_LBUTTONUP(OnLButtonUp);
 			
+			NOTIFY_HANDLER(ID_CLEAR_LIST, TVN_BEGINDRAG, OnDrag);
+
 			//REFLECTED_NOTIFY_CODE_HANDLER(TVN_BEGINDRAG, foo);
 //			NOTIFY_HANDLER(IDC_TREEVIEWCTRL, TVN_BEGINDRAG, OnDrag);
 		END_MSG_MAP()
 
 		CSubsonicUi(ui_element_config::ptr, ui_element_instance_callback_ptr p_callback);
 
-		LRESULT OnLButtonDown(UINT, WPARAM, LPARAM, BOOL&);
 		LRESULT OnLButtonDblClick(UINT, WPARAM, LPARAM, BOOL&);
 		LRESULT OnRButtonDown(UINT, WPARAM, LPARAM, BOOL&);
 		LRESULT OnContextMenu(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/);

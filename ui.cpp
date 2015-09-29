@@ -19,12 +19,8 @@ LRESULT CSubsonicUi::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*b
 
 	CTreeViewCtrlEx::SetDlgCtrlID(IDC_TREEVIEWCTRL);
 
-	console::printf("Found text color: %x", m_callback->query_std_color(ui_color_text));
-	console::printf("Found bg color: %x", m_callback->query_std_color(ui_color_background));
-
 	CTreeViewCtrlEx::SetTextColor(m_callback->query_std_color(ui_color_text));
 	CTreeViewCtrlEx::SetBkColor(m_callback->query_std_color(ui_color_background));
-	
 
 	// show +/- and the connecting lines
 	CTreeViewCtrlEx::ModifyStyle(1, TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS);
@@ -38,17 +34,9 @@ LRESULT CSubsonicUi::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*b
 	return lRet;
 }
 
-LRESULT CSubsonicUi::OnLButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &)
-{
-	LRESULT lRet = DefWindowProc(uMsg, wParam, lParam);
-	console::print("left mouse clicked");
-	return lRet;
-}
-
 LRESULT CSubsonicUi::OnRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &)
 {
 	LRESULT lRet = DefWindowProc(uMsg, wParam, lParam);
-	console::print("right mouse clicked");
 	
 	return lRet;
 }
@@ -150,19 +138,23 @@ LRESULT CSubsonicUi::OnLButtonDblClick(UINT, WPARAM, LPARAM, BOOL&) {
 }
 
 LRESULT CSubsonicUi::OnContextCatalogUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
-	console::print("Catalog Menu Item clicked");
+	const int result = MessageBox(L"Are you sure you want to update your local subsonic album list?", L"Update album list", MB_YESNO | MB_ICONQUESTION);
 
-	threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::AlbumQueryThread>(&scanner, m_hWnd),
-		threaded_process::flag_show_progress | threaded_process::flag_show_abort, m_hWnd, "Querying album catalog from Subsonic Server");
-	
+	if (result == IDYES) {
+		threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::AlbumQueryThread>(&scanner, m_hWnd),
+			threaded_process::flag_show_progress | threaded_process::flag_show_abort, m_hWnd, "Querying album catalog from Subsonic Server");
+	}
 	return 0;
 }
 
 LRESULT CSubsonicUi::OnContextPlaylistUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
-	console::print("Playlist Menu Item clicked");
 
-	threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::AlbumQueryThread>(&scanner, m_hWnd),
-		threaded_process::flag_show_progress | threaded_process::flag_show_abort, m_hWnd, "Querying playlist data from Subsonic Server");
+	const int result = MessageBox(L"Are you sure you want to update your local subsonic playlists?", L"Update playlists", MB_YESNO | MB_ICONQUESTION);
+
+	if (result == IDYES) {
+		threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::AlbumQueryThread>(&scanner, m_hWnd),
+			threaded_process::flag_show_progress | threaded_process::flag_show_abort, m_hWnd, "Querying playlist data from Subsonic Server");
+	}
 
 	return 0;
 }

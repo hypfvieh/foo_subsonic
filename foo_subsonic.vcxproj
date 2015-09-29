@@ -85,6 +85,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(ProjectDir)sqlite3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -123,6 +124,7 @@
     <ClInclude Include="FakeAlbumArtExtractor.h" />
     <ClInclude Include="foo_subsonic.h" />
     <ClInclude Include="ListviewHelper.h" />
+    <ClInclude Include="consts.h" />
     <ClInclude Include="meta.h" />
     <ClInclude Include="playlist.h" />
     <ClInclude Include="playlistQueryThread.h" />

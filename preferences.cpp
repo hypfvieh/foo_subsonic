@@ -1,6 +1,7 @@
 #include "foo_subsonic.h"
 #include "preferences.h"
 #include "sqliteCacheDb.h"
+#include "consts.h"
 
 namespace Preferences {
 	const GUID guid_connect_url_data = { 0x4dcf833, 0x78b7, 0x4549,{ 0xaf, 0x34, 0xfd, 0xd3, 0x9c, 0x13, 0x9, 0xde } };
@@ -255,14 +256,23 @@ public:
 	
 	LRESULT OnBnClickedBtnResetCoverartCache(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 	{
-		SqliteCacheDb::getInstance()->clearCoverArtCache();
+		const int result = MessageBox(L"This removes all cached covert arts. Are you sure?", L"Delete cached cover arts", MB_YESNO | MB_ICONQUESTION);
+
+		if (result == IDYES) {
+			SqliteCacheDb::getInstance()->clearCoverArtCache();
+			MessageBox(L"Cover arts removed.", L"Cover arts Cache", MB_OK | MB_ICONINFORMATION);
+		}
 		return 0;
 	}
 
 	LRESULT OnBnClickedBtnResetCache(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 	{		
-		SqliteCacheDb::getInstance()->clearCache();
+		const int result = MessageBox(L"This deletes your offline cached data. Are you sure?", L"Delete Offline Cache", MB_YESNO | MB_ICONQUESTION);
 
+		if (result == IDYES) {
+			SqliteCacheDb::getInstance()->clearCache();
+			MessageBox(L"Offline cache cleared.", L"Offline Cache", MB_OK | MB_ICONINFORMATION);
+		}
 		return 0;
 	}
 };
