@@ -84,7 +84,7 @@ namespace foo_subsonic {
 		HTREEITEM catalogRootNodes[28];
 		HTREEITEM getRootTreeNodeForArtist(wchar_t bgnLetter);
 
-		void addTracksToTreeNode(std::list<Track*>* trackList, HTREEITEM albumNode, bool withTrackNumber);
+		void addTracksToTreeNode(std::list<Track*>* trackList, HTREEITEM albumNode, bool withTrackNumber, bool withArtistName);
 
 	protected:
 		CSubsonicUi() {

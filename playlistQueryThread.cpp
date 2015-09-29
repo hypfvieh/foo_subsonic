@@ -10,5 +10,5 @@ PlaylistQueryThread::PlaylistQueryThread(SubsonicLibraryScanner *scanner, HWND w
 
 
 void PlaylistQueryThread::run(threaded_process_status &p_status, abort_callback &p_abort) {
-	scanner->retrieveAllPlaylists(window, p_status);
+	scanner->retrieveAllPlaylists(window, p_status, p_abort);
 }

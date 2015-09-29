@@ -10,5 +10,5 @@ AlbumQueryThread::AlbumQueryThread(SubsonicLibraryScanner *scanner, HWND window)
 
 
 void AlbumQueryThread::run(threaded_process_status &p_status, abort_callback &p_abort) {
-	scanner->retrieveAllAlbums(window, p_status);
+	scanner->retrieveAllAlbums(window, p_status, p_abort);
 }

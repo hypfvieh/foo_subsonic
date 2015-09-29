@@ -144,18 +144,39 @@ void SqliteCacheDb::savePlaylists() {
 		query.bind(7, it->get_owner());
 		query.bind(8, it->get_songcount());
 
-		while (query.executeStep()) {
+		if (query.exec() > 0) {
 			std::list<Track*>* trackList = it->getTracks();
 			std::list<Track*>::iterator trackIterator;
 			for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
 				Track* t = *trackIterator;
 
-				SQLite::Statement query_track(*db, "INSERT OR REPLACE INTO playlist_trackss (playlist_id, track_id) VALUES (?1, ?2);");
+				// save assignment track <-> playlist
+				SQLite::Statement query_track_playlist(*db, "INSERT OR REPLACE INTO playlist_tracks (playlist_id, track_id) VALUES (?1, ?2);");
+
+				query_track_playlist.bind(1, it->get_id());
+				query_track_playlist.bind(2, t->get_id());
+
+				query_track_playlist.exec();
+
+				// save track information
+				SQLite::Statement query_track(*db, "INSERT OR REPLACE INTO tracks (id, title, duration, bitRate, contentType, coverArt, genre, suffix, track, year, size, albumId) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12);");
 
 				query_track.bind(1, t->get_id());
-				query_track.bind(2, it->get_id());
+				query_track.bind(2, t->get_title());
+				query_track.bind(3, t->get_duration());
+				query_track.bind(4, t->get_bitrate());
+				query_track.bind(5, t->get_contentType());
+				query_track.bind(6, t->get_coverArt());
+				query_track.bind(7, t->get_genre());
+				query_track.bind(8, t->get_suffix());
+				query_track.bind(9, t->get_tracknumber());
+				query_track.bind(10, t->get_year());
+				query_track.bind(11, t->get_size());
+				query_track.bind(12, t->get_parentId());
 
-				query_track.exec();
+				if (query_track.exec() != 1) {
+					uDebugLog() << "Error while inserting track";
+				}
 			}
 		}
 	}
@@ -281,9 +302,9 @@ void SqliteCacheDb::getAllPlaylistsFromCache() {
 		query_track.bind(1, p.get_id());
 
 		while (query_track.executeStep()) {
-
-			SQLite::Statement query_track(*db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt FROM tracks WHERE albumId = ?1");
-			query_track.bind(1, p.get_id());
+			const char* trackId = query_track.getColumn(0);
+			SQLite::Statement query_track(*db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt FROM tracks WHERE id = ?1");
+			query_track.bind(1, trackId);
 
 			while (query_track.executeStep()) {
 				Track* t = new Track();
@@ -296,11 +317,10 @@ void SqliteCacheDb::getAllPlaylistsFromCache() {
 					t->set_artist(query_artist.getColumn(1));
 				}
 
-				
 				p.addTrack(t);
-			}			
-			playlists.push_back(p);
+			}						
 		}
+		playlists.push_back(p);
 	}	
 }
 

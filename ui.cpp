@@ -2,7 +2,7 @@
 #include "ui.h"
 #include "subsoniclibraryscanner.h"
 #include "albumQueryThread.h"
-//#include "xmlcachedb.h"
+#include "playlistQueryThread.h"
 #include "sqliteCacheDb.h"
 #include "playlistupdater.h"
 #include "search.h"
@@ -74,6 +74,9 @@ LRESULT CSubsonicUi::OnLButtonDblClick(UINT, WPARAM, LPARAM, BOOL&) {
 
 	if ((selected != NULL)) {
 		DWORD_PTR ptr = GetItemData(selected);
+		if (ptr == NULL) {
+			return 0;
+		}
 		CoreEntity* coreType = reinterpret_cast<CoreEntity*>(ptr);
 
 		if (coreType->get_type() == ENTRY_TYPE_TRACK) { // Track
@@ -152,7 +155,7 @@ LRESULT CSubsonicUi::OnContextPlaylistUpdate(WORD /*wNotifyCode*/, WORD /*wID*/,
 	const int result = MessageBox(L"Are you sure you want to update your local subsonic playlists?", L"Update playlists", MB_YESNO | MB_ICONQUESTION);
 
 	if (result == IDYES) {
-		threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::AlbumQueryThread>(&scanner, m_hWnd),
+		threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::PlaylistQueryThread>(&scanner, m_hWnd),
 			threaded_process::flag_show_progress | threaded_process::flag_show_abort, m_hWnd, "Querying playlist data from Subsonic Server");
 	}
 
@@ -177,14 +180,22 @@ HTREEITEM CSubsonicUi::getRootTreeNodeForArtist(wchar_t bgnLetter) {
 	return catalogRootNodes[0]; // should match for everything which is not beginning with a letter
 }
 
-void CSubsonicUi::addTracksToTreeNode(std::list<Track*>* trackList, HTREEITEM albumNode, bool withTrackNumber) {
+void CSubsonicUi::addTracksToTreeNode(std::list<Track*>* trackList, HTREEITEM albumNode, bool withTrackNumber, bool withArtistName) {
 	
 	std::list<Track*>::iterator trackIterator;
 	for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
 		pfc::stringcvt::string_wide_from_utf8 trackName((*trackIterator)->get_title());
+		pfc::stringcvt::string_wide_from_utf8 artistName((*trackIterator)->get_artist());
+		
 		wchar_t track[250];
-		if (withTrackNumber) {
+		if (withTrackNumber && withArtistName) {
+			swprintf(track, sizeof(track), L"%i) %s - %s", (*trackIterator)->get_tracknumber(), artistName.get_ptr(), trackName.get_ptr());
+		}
+		else if (withTrackNumber) {
 			swprintf(track, sizeof(track), L"%i) %s", (*trackIterator)->get_tracknumber(), trackName.get_ptr());
+		}
+		else if (withArtistName) {
+			swprintf(track, sizeof(track), L"%s - %s", artistName.get_ptr(), trackName.get_ptr());
 		}
 		else {
 			swprintf(track, sizeof(track), L"%s", trackName.get_ptr());
@@ -194,7 +205,6 @@ void CSubsonicUi::addTracksToTreeNode(std::list<Track*>* trackList, HTREEITEM al
 
 		SetItemData(titleNode, (DWORD_PTR)store); // attach track meta data to node, so we can use this as shortcut for adding tracks to playlist
 	}
-
 }
 
 void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
@@ -211,7 +221,6 @@ void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 	}
 
 	for (it = albumList->begin(); it != albumList->end(); it++) {
-		//pfc::stringcvt::string_os_from_utf8 albumname(albumList[i]->get_title());
 
 		pfc::stringcvt::string_wide_from_utf8 artistName(it->get_artist());
 		pfc::stringcvt::string_wide_from_utf8 albumName(it->get_title());
@@ -236,7 +245,7 @@ void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 				HTREEITEM albumNode = InsertItem(albumName, artistNode, TVI_LAST);
 
 				std::list<Track*>* trackList = it->getTracks();
-				addTracksToTreeNode(trackList, albumNode, true);
+				addTracksToTreeNode(trackList, albumNode, true, false);
 
 				Album* store = &*it;
 				SetItemData(albumNode, (DWORD_PTR)store); // attach album details
@@ -248,7 +257,7 @@ void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 			HTREEITEM albumNode = InsertItem(albumName, artistRoot, TVI_LAST); // add the current album as entry to artist
 			
 			std::list<Track*>* trackList = it->getTracks();
-			addTracksToTreeNode(trackList, albumNode, true);
+			addTracksToTreeNode(trackList, albumNode, true, false);
 
 			Album* store = &*it;
 			SetItemData(albumNode, (DWORD_PTR)store); // attach album details
@@ -266,16 +275,30 @@ void CSubsonicUi::populateTreeWithPlaylists(std::list<Playlist>* playlists) {
 	rootNodes[TREE_ROOT_PLAYLISTS] = CTreeViewCtrlEx::InsertItem(L"Remote Playlists", NULL, TVI_ROOT); // create playlist node
 
 	for (it = playlists->begin(); it != playlists->end(); it++) {
-		//pfc::stringcvt::string_os_from_utf8 albumname(albumList[i]->get_title());
 
-		pfc::stringcvt::string_wide_from_utf8 playlistName(it->get_name());		
+		char playtime[20];
+
+		int hours = it->get_duration() / 3600;
+		int remaining = it->get_duration() % 3600;
+		int minutes = remaining / 60;		
+		int seconds = remaining % 60;
+
+		snprintf(playtime, 20, "%02d:%02d:%02d", hours, minutes, seconds);
+
+		pfc::string8 tmp = it->get_name();
+		tmp << "<Len: " << playtime << ">";
+
+		pfc::stringcvt::string_wide_from_utf8 playlistName(tmp);
 
 		HTREEITEM rootNode = rootNodes[TREE_ROOT_PLAYLISTS];
 		
-		
-		HTREEITEM playlistNode = InsertItem(playlistName, rootNode, TVI_LAST); // add the current album as entry to artist
+		HTREEITEM playlistNode = InsertItem(playlistName, rootNode, TVI_LAST); // add the current playlist as entry to artist
+
+		Playlist* store = &*it;
+		SetItemData(playlistNode, (DWORD_PTR)store); // attach album details
+
 		std::list<Track*>* tracks = it->getTracks();
-		addTracksToTreeNode(tracks, playlistNode, false);
+		addTracksToTreeNode(tracks, playlistNode, false, true);
 	}
 
 }

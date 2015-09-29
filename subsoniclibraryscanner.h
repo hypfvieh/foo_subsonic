@@ -15,18 +15,18 @@ namespace foo_subsonic {
 		friend class SearchQueryThread;
 	public:
 	protected:
-		void retrieveAllAlbums(HWND window, threaded_process_status &p_status);
-		void retrieveAllPlaylists(HWND window, threaded_process_status &p_status);
+		void retrieveAllAlbums(HWND window, threaded_process_status &p_status, abort_callback &p_abort);
+		void retrieveAllPlaylists(HWND window, threaded_process_status &p_status, abort_callback &p_abort);
 		void retrieveAllSearchResults(HWND window, threaded_process_status &p_status, const char* url);
 
 	private:
 		BOOL connectAndGet(TiXmlDocument* doc, const char* restMethod, const char* urlparams);
 		
-		void getAlbumList(threaded_process_status &p_status, int size, int offset);
-		void getAlbumTracks(Album *album);
+		void getAlbumList(threaded_process_status &p_status, int size, int offset, abort_callback &p_abort);
+		void getAlbumTracks(Album *album, abort_callback &p_abort);
 		
-		void getPlaylists(threaded_process_status &p_status);
-		void getPlaylistEntries(Playlist *playlist);
+		void getPlaylists(threaded_process_status &p_status, abort_callback &p_abort);
+		void getPlaylistEntries(Playlist *playlist, abort_callback &p_abort);
 
 		void getSearchResults(const char* urlParams);
 

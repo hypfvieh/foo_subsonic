@@ -136,7 +136,7 @@ public:
 		url << "&u=" << url_encode(Preferences::username_data);
 		url << "&p=" << pass.c_str();
 
-		if (sizeof(urlparams) > 0) {
+		if (strlen(urlparams) > 0) {
 			url << "&" << urlparams;
 		}
 

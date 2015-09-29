@@ -47,7 +47,7 @@ BOOL SubsonicLibraryScanner::connectAndGet(TiXmlDocument* doc, const char* restM
 /*
 	Retrieve @size albums from server starting at @offset.
 */
-void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int size, int offset) {
+void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int size, int offset, abort_callback &p_abort) {
 	pfc::string8 urlparms;
 	urlparms = "type=alphabeticalByName&size=";
 	urlparms << size << "&offset=" << offset;
@@ -74,16 +74,20 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int
 
 					console::print(tmp);
 
-					getAlbumTracks(&a);
-
+					getAlbumTracks(&a, p_abort);
+					if (p_abort.is_aborting()) {
+						console::print("Playlist retrieval aborted");
+						break;
+					}
 					SqliteCacheDb::getInstance()->addAlbum(a);
 
 					counter++;
 					p_status.set_progress(counter, offset + 1000);
+					
 				}
 				// recurse until empty list is returned
 				offset += SUBSONIC_MAX_ALBUMLIST_SIZE;
-				 getAlbumList(p_status, size, offset);
+				getAlbumList(p_status, size, offset, p_abort);
 
 			}
 		}
@@ -93,7 +97,7 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int
 /*
 	Get all tracks for the album specified in @album.
 */
-void SubsonicLibraryScanner::getAlbumTracks(Album *album) {
+void SubsonicLibraryScanner::getAlbumTracks(Album *album, abort_callback &p_abort) {
 	pfc::string8 urlparms;
 	urlparms = "id=";
 	urlparms << album->get_id();
@@ -113,7 +117,10 @@ void SubsonicLibraryScanner::getAlbumTracks(Album *album) {
 				for (TiXmlElement* e = firstChild->FirstChildElement("song"); e != NULL; e = e->NextSiblingElement("song")) {
 					Track* t = new Track();					
 					parseTrackInfo(e, t);
-
+					if (p_abort.is_aborting()) {
+						console::print("Album retrieval aborted");
+						break;
+					}
 					album->addTrack(t);										
 				}
 			}
@@ -124,8 +131,7 @@ void SubsonicLibraryScanner::getAlbumTracks(Album *album) {
 /*
 	Retrieve all playlists from subsonic server.
 */
-void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status) {
-	//TODO: Retrieve playlist
+void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status, abort_callback &p_abort) {
 
 	TiXmlDocument doc;
 
@@ -137,10 +143,9 @@ void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status) {
 	if (rootNode) {
 		TiXmlElement* firstChild = rootNode->FirstChildElement("playlists");
 		if (firstChild) {
-			if (firstChild->NoChildren()) { // list is not empty
+			if (!firstChild->NoChildren()) { // list is not empty
 				for (TiXmlElement* e = firstChild->FirstChildElement("playlist"); e != NULL; e = e->NextSiblingElement("playlist")) {
 					Playlist p;
-
 					p.set_comment(XmlStrOrDefault(e, "comment", ""));
 					p.set_coverArt(XmlStrOrDefault(e, "covertArt", ""));
 					p.set_duration(XmlIntOrDefault(e, "duration", 0));
@@ -151,8 +156,11 @@ void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status) {
 					p.set_songcount(XmlIntOrDefault(e, "songCount", 0));
 
 					// retrieve playlist entries
-					getPlaylistEntries(&p);
-
+					getPlaylistEntries(&p, p_abort);
+					if (p_abort.is_aborting()) {
+						console::print("Playlist retrieval aborted");
+						break;
+					}
 					SqliteCacheDb::getInstance()->addPlaylist(p);
 				}
 			}
@@ -163,7 +171,7 @@ void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status) {
 /*
 	Get all entries (tracks) for the playlist specified in @playlist.
 */
-void SubsonicLibraryScanner::getPlaylistEntries(Playlist *playlist) {
+void SubsonicLibraryScanner::getPlaylistEntries(Playlist *playlist, abort_callback &p_abort) {
 	pfc::string8 urlparms;
 	urlparms = "id=";
 	urlparms << playlist->get_id();
@@ -184,6 +192,11 @@ void SubsonicLibraryScanner::getPlaylistEntries(Playlist *playlist) {
 					Track* t = new Track();
 					parseTrackInfo(e, t);
 					playlist->addTrack(t);
+					if (p_abort.is_aborting()) {
+						console::print("Playlist retrieval aborted");
+						break;
+					}
+
 				}
 			}
 		}
@@ -250,14 +263,14 @@ void SubsonicLibraryScanner::parsingError(const char* message, const char* errCo
   Tries to query all albums from subsonic server.
   The result will be stored in the given albumList reference.
 */
-void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_status &p_status) {
+void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_status &p_status, abort_callback &p_abort) {
 	
 	int size = SUBSONIC_MAX_ALBUMLIST_SIZE;
 	int offset = 0;
 
 	SqliteCacheDb::getInstance()->getAllAlbums()->clear(); // remove old entries first
 
-	getAlbumList(p_status, size, offset);
+	getAlbumList(p_status, size, offset, p_abort);
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
 
@@ -276,9 +289,9 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 /*
 	Tries to retrieve all playlists stored for the current user (or being public).
 */
-void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window, threaded_process_status &p_status) {
+void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window, threaded_process_status &p_status, abort_callback &p_abort) {
 	SqliteCacheDb::getInstance()->getAllPlaylists()->clear(); // remove old entries
-	getPlaylists(p_status);
+	getPlaylists(p_status, p_abort);
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
 
