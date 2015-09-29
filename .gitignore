@@ -5,6 +5,9 @@ Debug/*
 Debugtinyxml/*
 ipch/*
 x64/*
+Release/
+Releasetinyxml/
+sqlite3/Release/
 sqlite3/Debug/
 sqlite3/*.c
 sqlite3/*.cpp
