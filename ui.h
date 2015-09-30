@@ -22,6 +22,7 @@ namespace foo_subsonic {
 			COMMAND_ID_HANDLER(ID_CONTEXT_UPDATECATALOG, OnContextCatalogUpdate);
 			COMMAND_ID_HANDLER(ID_CONTEXT_UPDATEPLAYLIST, OnContextPlaylistUpdate);
 			COMMAND_ID_HANDLER(ID_CONTEXT_SEARCHDIALOG, OnSearchDialogShow);
+			COMMAND_ID_HANDLER(ID_CONTEXT_RELOADCACHE, OnReloadCache);
 			COMMAND_ID_HANDLER(TVN_BEGINDRAG, foo);
 
 			MSG_WM_MOUSEMOVE(OnMouseMove);
@@ -43,6 +44,7 @@ namespace foo_subsonic {
 		LRESULT OnContextCatalogUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT OnContextPlaylistUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT OnSearchDialogShow(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+		LRESULT OnReloadCache(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 
 		LRESULT OnContextCatalogUpdateDone(UINT, WPARAM, LPARAM, BOOL&);
 		LRESULT OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL&);

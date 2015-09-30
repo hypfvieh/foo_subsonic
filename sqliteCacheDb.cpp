@@ -1,11 +1,16 @@
 #include "foo_subsonic.h"
 #include "sqliteCacheDb.h"
 #include <regex>
+#include <sstream>
 
 SqliteCacheDb* SqliteCacheDb::instance = NULL;
 
 
 SqliteCacheDb::SqliteCacheDb() {
+	loadOrCreateDb();	
+}
+
+void SqliteCacheDb::loadOrCreateDb() {
 	pfc::string userDir = core_api::get_profile_path(); // save cache to user profile, if enabled
 	userDir += "\\foo_subsonic_cache.db";
 
@@ -19,7 +24,6 @@ SqliteCacheDb::SqliteCacheDb() {
 		getAllPlaylistsFromCache();
 
 	}
-	
 }
 
 void SqliteCacheDb::createTableStructure() {
@@ -40,6 +44,19 @@ SqliteCacheDb::~SqliteCacheDb() {
 		db->exec("VACUUM;"); // restructure cache, maybe we have to free some space
 		db->~Database();
 	}
+}
+
+void SqliteCacheDb::reloadCache() {
+	if (db != NULL) {
+		db->exec("VACUUM;"); // restructure cache, maybe we have to free some space
+		db->~Database();
+	}
+
+	albumlist.clear();
+	playlists.clear();
+	urlToTrackMap.clear();
+
+	loadOrCreateDb();
 }
 
 std::list<Album>* SqliteCacheDb::getAllAlbums() {
@@ -126,14 +143,22 @@ bool SqliteCacheDb::getTrackDetailsByUrl(const char* url, Track &t) {
 	return FALSE;
 }
 
-void SqliteCacheDb::savePlaylists() {
+void SqliteCacheDb::savePlaylists(threaded_process_status &p_status, abort_callback &p_abort) {
 	if (db == NULL) return;
 	std::list<Playlist>::iterator it;
 
+	unsigned int prg = 0;
+	p_status.set_progress(prg, playlists.size() + 1);
+
+	SQLite::Transaction transaction(*db);
+	SQLite::Statement query(*db, "INSERT OR REPLACE INTO playlists (id, comment, coverArt, duration, public, name, owner, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);");
 	for (it = playlists.begin(); it != playlists.end(); it++) {
 		
+		if (p_abort.is_aborting()) {
+			break;
+		}
 
-		SQLite::Statement query(*db, "INSERT OR REPLACE INTO playlists (id, comment, coverArt, duration, public, name, owner, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);");
+		query.reset();
 
 		query.bind(1, it->get_id());
 		query.bind(2, it->get_comment());
@@ -149,6 +174,10 @@ void SqliteCacheDb::savePlaylists() {
 			std::list<Track*>::iterator trackIterator;
 			for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
 				Track* t = *trackIterator;
+
+				if (p_abort.is_aborting()) {
+					break;
+				}
 
 				// save assignment track <-> playlist
 				SQLite::Statement query_track_playlist(*db, "INSERT OR REPLACE INTO playlist_tracks (playlist_id, track_id) VALUES (?1, ?2);");
@@ -179,16 +208,28 @@ void SqliteCacheDb::savePlaylists() {
 				}
 			}
 		}
+		p_status.set_progress(++prg, playlists.size() + 1);
 	}
+	transaction.commit();
+	p_status.set_progress(++prg, playlists.size() + 1);
 }
 
-void SqliteCacheDb::saveAlbums() {
+void SqliteCacheDb::saveAlbums(threaded_process_status &p_status, abort_callback &p_abort) {
 	if (db == NULL) return;
 	std::list<Album>::iterator it;
-	
+
+	unsigned int prg = 0;
+
+	p_status.set_progress(prg, albumlist.size() + 1);
+
+	SQLite::Statement query(*db, "INSERT OR REPLACE INTO albums (id, artist, title, genre, year, coverArt, duration, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);");
+	SQLite::Transaction transaction(*db);
 	for (it = albumlist.begin(); it != albumlist.end(); it++) {
 
-		SQLite::Statement query(*db, "INSERT OR REPLACE INTO albums (id, artist, title, genre, year, coverArt, duration, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);");
+		if (p_abort.is_aborting()) {
+			break;
+		}
+		query.reset();
 
 		query.bind(1, it->get_id());
 		query.bind(2, it->get_artist());
@@ -199,36 +240,120 @@ void SqliteCacheDb::saveAlbums() {
 		query.bind(7, it->get_duration());
 		query.bind(8, it->get_songCount());
 
-		
+		// adding the tracks requires some extra work to speed up the writing of sqlite.
+		// doing all INSERTs seperately is incredibly slow, so we try some sort of batch processing here
 		if (query.exec() >= 1) {
 			std::list<Track*>* trackList = it->getTracks();
 			std::list<Track*>::iterator trackIterator;
 
+			// list of maps which contains querystring and a map with placeholder<->values
+			std::list<std::map<std::string, std::map<int, const char*>>> allInone;
+
+			unsigned int colcount = 0;
+			bool first = true;
+
+			std::ostringstream tmp;
+
+			std::map<std::string, std::map<int, const char*>> listEntry;
+			std::map<int, const char*> val;
+
+			// generate query string and value map
+			// we need to take care of the SQLITE_LIMIT_VARIABLE_NUMBER which is 999 by default
+			// so we first create a list of maps containg query and the placeholder values
+			// after that, we iterate over that list and execute each query
 			for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
-				TiXmlElement* track = new TiXmlElement("Track");
 				Track* t = *trackIterator;
 
-				SQLite::Statement query_track(*db, "INSERT OR REPLACE INTO tracks (id, title, duration, bitRate, contentType, coverArt, genre, suffix, track, year, size, albumId) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12);");
+				if (p_abort.is_aborting()) {
+					break;
+				}
 
-				query_track.bind(1, t->get_id());
-				query_track.bind(2, t->get_title());
-				query_track.bind(3, t->get_duration());
-				query_track.bind(4, t->get_bitrate());
-				query_track.bind(5, t->get_contentType());
-				query_track.bind(6, t->get_coverArt());
-				query_track.bind(7, t->get_genre());
-				query_track.bind(8, t->get_suffix());
-				query_track.bind(9, t->get_tracknumber());
-				query_track.bind(10, t->get_year());
-				query_track.bind(11, t->get_size());
-				query_track.bind(12, it->get_id());
+				// add the values required for the prepared statement				
 
-				if (query_track.exec() != 1) {				
-					uDebugLog() << "Error while inserting track";
+				val[colcount +  1] = t->get_id();
+				val[colcount +  2] = t->get_title();
+				val[colcount +  3] = std::to_string(t->get_duration()).c_str();
+				val[colcount +  4] = std::to_string(t->get_bitrate()).c_str();
+				val[colcount +  5] = t->get_contentType();
+				val[colcount +  6] = t->get_coverArt();
+				val[colcount +  7] = t->get_genre();
+				val[colcount +  8] = t->get_suffix();
+				val[colcount +  9] = std::to_string(t->get_tracknumber()).c_str();
+				val[colcount + 10] = t->get_year();
+				val[colcount + 11] = std::to_string(t->get_size()).c_str();
+				val[colcount + 12] = it->get_id();				
+
+				if (first) { // create a new query, the first part is done statically as the syntax is slightly different than the following UNION SELECTs
+					first = false;
+					tmp << "INSERT OR REPLACE INTO tracks (id, title, duration, bitRate, contentType, coverArt, genre, suffix, track, year, size, albumId) ";
+					tmp << "SELECT ?1 as id, ?2 as title, ?3 as duration, ?4 as bitRate, ?5 as contentType, ?6 as coverArt, ?7 as genre, ?8 as suffix, ?9 as track, ?10 as year, ?11 as size, ?12 as albumId ";
+					colcount = 12;
+
+				}
+				else { // add a new value set
+					tmp << "UNION SELECT ?"	<<  (colcount + 1) << ", ?" <<  (colcount + 2) << ", ?" << (colcount + 3)
+						<< ", ?"			<<  (colcount + 4) << ", ?" <<  (colcount + 5) << ", ?" << (colcount + 6)
+						<< ", ?"			<<  (colcount + 7) << ", ?" <<  (colcount + 8) << ", ?" << (colcount + 9)
+						<< ", ?"			<< (colcount + 10) << ", ?" << (colcount + 11) << ", ?"	<< (colcount + 12)
+						<< " ";
+
+					if (colcount >= SQLITE_LIMIT_VARIABLE_NUMBER || colcount + 12 >= SQLITE_LIMIT_VARIABLE_NUMBER) { // if we reach limit (999) create new query block
+						listEntry[tmp.str()] = val;
+						allInone.push_back(listEntry);
+
+						tmp = std::ostringstream(); // create new query
+						val = std::map<int, const char*>(); // create new entry map
+						listEntry = std::map<std::string, std::map<int, const char*>>(); // create new list entry
+						first = true; // start again from the beginning, adding the static part as well
+						colcount = 0; // no columns are used yet
+					}
+					else {
+						colcount += 12; // increase total column count
+					}
+				}
+			}
+
+			// if there is a query which was not added before (limit not reached), add it now
+			if (strlen(tmp.str().c_str()) > 0) {
+				listEntry[tmp.str()] = val;
+				allInone.push_back(listEntry);
+			}
+
+			std::list<std::map<std::string, std::map<int, const char*>>>::iterator queryIterator;
+
+			// iterate over the list of maps, create and run every statement
+			for (queryIterator = allInone.begin(); queryIterator != allInone.end(); queryIterator++) {
+				std::map<std::string, std::map<int, const char*>> sqlValueMap = *queryIterator;
+
+				std::map<std::string, std::map<int, const char*>>::iterator sqlValueMapIterator;
+				for (sqlValueMapIterator = sqlValueMap.begin(); sqlValueMapIterator != sqlValueMap.end(); sqlValueMapIterator++) {
+
+					if (p_abort.is_aborting()) {
+						break;
+					}
+
+					const char* sqlQueryString = sqlValueMapIterator->first.c_str();
+					SQLite::Statement query_track(*db, sqlQueryString);
+
+					std::map<int, const char*> valueMap = sqlValueMapIterator->second;
+					std::map<int, const char*>::iterator valueMapIterator;
+
+					for (valueMapIterator = valueMap.begin(); valueMapIterator != valueMap.end(); valueMapIterator++) {
+						query_track.bind(valueMapIterator->first, valueMapIterator->second);
+					}
+
+					query_track.exec();
+					if (query_track.getErrorCode() != SQLITE_DONE) {
+						uDebugLog() << "Error while inserting track ErrCode: " << query_track.getErrorCode() << " -- ExtErrCode: " << query_track.getExtendedErrorCode();
+					}
+					query_track.reset();
 				}
 			}
 		}
+		p_status.set_progress(++prg, albumlist.size() + 1);
 	}
+	transaction.commit();
+	p_status.set_progress(++prg, albumlist.size() + 1);
 }
 
 
@@ -328,6 +453,7 @@ void SqliteCacheDb::addCoverArtToCache(const char* coverArtId, const void * cove
 	if (db == NULL) return;
 
 	if (dataLength > 0 && coverArtId != NULL && strlen(coverArtId) > 0) {
+		SQLite::Transaction transaction(*db);
 		SQLite::Statement query_coverArt(*db, "INSERT OR REPLACE INTO coverart (id, coverArtData) VALUES (?1, ?2)");
 
 		query_coverArt.bind(1, coverArtId);
@@ -336,6 +462,7 @@ void SqliteCacheDb::addCoverArtToCache(const char* coverArtId, const void * cove
 		if (query_coverArt.exec() < 1) {
 			uDebugLog() << "Error inserting coverArtData";
 		}
+		transaction.commit();
 	}
 }
 

@@ -31,7 +31,6 @@
 #define IDC_TXT_COVERARTSIZE            1042
 #define IDC_BTN_RESET_CACHE             1043
 #define IDC_BTN_RESET_COVERART_CACHE    1044
-#define IDC_CB_CATEGORY                 1046
 #define IDC_CONNECT_URL_DATA            1047
 #define IDC_LBL_RESULTS_COUNT           1047
 #define IDC_CB_RESULT_COUNT             1048
@@ -40,6 +39,8 @@
 #define IDC_CONNECT_URL_LBL             1051
 #define IDC_USERNAME_LBL                1052
 #define IDC_PASSWORD_LBL                1053
+#define IDC_CHECK1                      1054
+#define IDC_CHK_LOADONSTARTUP           1054
 
 // Next default values for new objects
 // 
@@ -47,7 +48,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        112
 #define _APS_NEXT_COMMAND_VALUE         40008
-#define _APS_NEXT_CONTROL_VALUE         1049
+#define _APS_NEXT_CONTROL_VALUE         1055
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

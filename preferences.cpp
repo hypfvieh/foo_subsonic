@@ -45,6 +45,11 @@ namespace Preferences {
 	const GUID guid_coverart_resize = { 0x4ed09771, 0x2bc5, 0x4f63,{ 0xba, 0xa3, 0x46, 0x18, 0x60, 0xec, 0x28, 0xa } };
 	cfg_bool coverart_resize(guid_coverart_resize, true);
 
+	// other
+	const GUID guid_load_cache_on_startup = { 0xc0f70300, 0x869, 0x4098,{ 0x81, 0xfc, 0xd8, 0x46, 0x38, 0xd9, 0x71, 0x3c } };
+	cfg_bool load_cache_on_startup(guid_load_cache_on_startup, true);
+
+	
 }
 class PreferencesPageInstance : public CDialogImpl<PreferencesPageInstance>, public preferences_page_instance {
 private:
@@ -60,6 +65,7 @@ private:
 	CCheckBox use_pass_as_hex;
 	CCheckBox use_coverart_dl;
 	CCheckBox use_coverart_resize;
+	CCheckBox use_load_on_startup;
 
 	CButton proxy_settings_no;
 	CButton proxy_settings_system;
@@ -88,6 +94,7 @@ public:
 		COMMAND_HANDLER_EX(IDC_CHK_RESIZECOVERART, EN_UPDATE, OnChanged)
 		COMMAND_HANDLER_EX(IDC_CHK_DLCOVERART, EN_UPDATE, OnChanged)
 		COMMAND_HANDLER_EX(IDC_TXT_COVERARTSIZE, EN_UPDATE, OnChanged)
+		COMMAND_HANDLER_EX(IDC_CHK_LOADONSTARTUP, EN_UPDATE, OnChanged)
 		COMMAND_HANDLER(IDC_BTN_RESET_COVERART_CACHE, BN_CLICKED, OnBnClickedBtnResetCoverartCache)
 		COMMAND_HANDLER(IDC_BTN_RESET_CACHE, BN_CLICKED, OnBnClickedBtnResetCache)
 	END_MSG_MAP()
@@ -103,6 +110,7 @@ public:
 		use_selfsignedcerts = GetDlgItem(IDC_CHECK_SELFSIGNED);
 		use_coverart_dl = GetDlgItem(IDC_CHK_DLCOVERART);
 		use_coverart_resize = GetDlgItem(IDC_CHK_RESIZECOVERART);
+		use_load_on_startup = GetDlgItem(IDC_CHK_LOADONSTARTUP);
 
 		use_pass_as_hex = GetDlgItem(IDC_CHK_PASSWORD_AS_HASH);
 
@@ -135,6 +143,8 @@ public:
 
 		CheckDlgButton(IDC_CHK_DLCOVERART, Preferences::coverart_download);
 		CheckDlgButton(IDC_CHK_RESIZECOVERART, Preferences::coverart_resize);
+
+		CheckDlgButton(IDC_CHK_LOADONSTARTUP, Preferences::load_cache_on_startup);
 
 		return 0;
 	}
@@ -182,6 +192,9 @@ public:
 		data = IsDlgButtonChecked(IDC_CHK_RESIZECOVERART) == BST_CHECKED;
 		if (Preferences::coverart_resize != data) return true;
 
+		data = IsDlgButtonChecked(IDC_CHK_LOADONSTARTUP) == BST_CHECKED;
+		if (Preferences::load_cache_on_startup != data) return true;
+
 		return false;
 	}
 
@@ -221,6 +234,8 @@ public:
 
 		Preferences::coverart_download = IsDlgButtonChecked(IDC_CHK_DLCOVERART) == BST_CHECKED;
 		Preferences::coverart_resize = IsDlgButtonChecked(IDC_CHK_RESIZECOVERART) == BST_CHECKED;
+
+		Preferences::load_cache_on_startup = IsDlgButtonChecked(IDC_CHK_LOADONSTARTUP) == BST_CHECKED;
 	}
 
 	void on_change() {
@@ -242,6 +257,7 @@ public:
 
 		CheckDlgButton(IDC_CHK_DLCOVERART, TRUE);
 		CheckDlgButton(IDC_CHK_RESIZECOVERART, TRUE);
+		CheckDlgButton(IDC_CHK_LOADONSTARTUP, TRUE);
 
 		CheckDlgButton(IDC_RADIO_PROXY_NO, TRUE);
 		CheckDlgButton(IDC_RADIO_PROXY_CUSTOM, FALSE);

@@ -82,13 +82,22 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int
 					SqliteCacheDb::getInstance()->addAlbum(a);
 
 					counter++;
-					p_status.set_progress(counter, offset + 1000);
+					if (offset == 0) {
+						p_status.set_progress(counter, SUBSONIC_MAX_ALBUMLIST_SIZE);
+					}
+					else if (offset > SUBSONIC_MAX_ALBUMLIST_SIZE) {
+						int p = offset / SUBSONIC_MAX_ALBUMLIST_SIZE;
+						p_status.set_progress(counter*p, offset);
+					}					
+					else {
+						p_status.set_progress(counter, offset);
+					}
 					
 				}
 				// recurse until empty list is returned
 				offset += SUBSONIC_MAX_ALBUMLIST_SIZE;
+				p_status.set_progress(1, 1);
 				getAlbumList(p_status, size, offset, p_abort);
-
 			}
 		}
 	}
@@ -275,7 +284,8 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
 
 	// save our new results
-	SqliteCacheDb::getInstance()->saveAlbums();
+	p_status.set_title("Saving catalog to cache database (this can take some time)");
+	SqliteCacheDb::getInstance()->saveAlbums(p_status, p_abort);
 
 	// signal the main window that the thread has done fetching
 	SendMessage(window, ID_CONTEXT_UPDATECATALOG_DONE, HIWORD(0), LOWORD(0));
@@ -296,7 +306,8 @@ void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window, threaded_process_
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
 
 	// save our new results
-	SqliteCacheDb::getInstance()->savePlaylists();
+	p_status.set_title("Saving playlists to cache database (this can take some time)");
+	SqliteCacheDb::getInstance()->savePlaylists(p_status, p_abort);
 
 	// signal the main window that the thread has done fetching
 	SendMessage(window, ID_CONTEXT_UPDATEPLAYLIST_DONE, HIWORD(0), LOWORD(0));

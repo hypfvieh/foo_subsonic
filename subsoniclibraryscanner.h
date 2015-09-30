@@ -5,7 +5,8 @@
 #include "playlist.h"
 #include <list>
 
-#define SUBSONIC_MAX_ALBUMLIST_SIZE		500;
+#define SUBSONIC_MAX_ALBUMLIST_SIZE		500
+//#define SUBSONIC_MAX_ALBUMLIST_SIZE		20;
 
 namespace foo_subsonic {
 	PFC_DECLARE_EXCEPTION(ConnectionError, pfc::exception, "Error connecting to subsonic server");

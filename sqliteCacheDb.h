@@ -5,7 +5,8 @@
 #include "playlist.h"
 #include <map>
 
-#define SQL_TABLE_CREATE_SIZE 9
+#define SQL_TABLE_CREATE_SIZE 10
+
 class SqliteCacheDb {
 
 private:
@@ -38,10 +39,12 @@ private:
 		"CREATE TABLE IF NOT EXISTS playlist_tracks (playlist_id TEXT, track_id TEXT, PRIMARY KEY (playlist_id, track_id))",
 		"CREATE INDEX IF NOT EXISTS album_id_index ON albums(id)",
 		"CREATE INDEX IF NOT EXISTS tracks_id_index ON tracks(id)",
+		"CREATE INDEX IF NOT EXISTS tracks_album_id_index ON tracks(albumId)",
 		"CREATE INDEX IF NOT EXISTS coverart_id_index ON coverart(id)",
 		"CREATE INDEX IF NOT EXISTS playlist_id_index ON playlists(id)"
 	};
 	
+	void loadOrCreateDb();
 	void createTableStructure();
 	
 public:
@@ -57,8 +60,8 @@ public:
 	Album* getAllSearchResults();
 	std::list<Playlist>* getAllPlaylists();
 
-	void saveAlbums();
-	void savePlaylists();
+	void saveAlbums(threaded_process_status &p_status, abort_callback &p_abort);
+	void savePlaylists(threaded_process_status &p_status, abort_callback &p_abort);
 
 	void addSearchResult(Track* t);
 	void addAlbum(Album a);
@@ -72,4 +75,6 @@ public:
 
 	void clearCoverArtCache();
 	void clearCache();
+
+	void reloadCache();
 };

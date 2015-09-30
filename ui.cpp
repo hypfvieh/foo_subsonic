@@ -26,12 +26,23 @@ LRESULT CSubsonicUi::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*b
 	CTreeViewCtrlEx::ModifyStyle(1, TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS);
 	//CTreeViewCtrlEx::SetExtendedStyle()
 
+	if (Preferences::load_cache_on_startup) {
+		// Read cached album catalog
+		SendMessage(m_hWnd, ID_CONTEXT_UPDATECATALOG_DONE, HIWORD(0), LOWORD(0));
+		// Read cached playlist
+		SendMessage(m_hWnd, ID_CONTEXT_UPDATEPLAYLIST_DONE, HIWORD(0), LOWORD(0));
+	}
+	return lRet;
+}
+
+LRESULT CSubsonicUi::OnReloadCache(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	SqliteCacheDb::getInstance()->reloadCache();
 	// Read cached album catalog
 	SendMessage(m_hWnd, ID_CONTEXT_UPDATECATALOG_DONE, HIWORD(0), LOWORD(0));
 	// Read cached playlist
 	SendMessage(m_hWnd, ID_CONTEXT_UPDATEPLAYLIST_DONE, HIWORD(0), LOWORD(0));
 
-	return lRet;
+	return 0;
 }
 
 LRESULT CSubsonicUi::OnRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &)
@@ -47,9 +58,11 @@ LRESULT CSubsonicUi::OnContextMenu(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL
 
 	if (NULL != hMenu) {
 		::AppendMenu(hMenu, MF_STRING, ID_CONTEXT_SEARCHDIALOG, _T("Search"));
-		::AppendMenu(hMenu, MF_SEPARATOR, ID_CONTEXT_UPDATEPLAYLIST, _T(""));
+		::AppendMenu(hMenu, MF_SEPARATOR, ID_CONTEXT_NOTHING, _T(""));
 		::AppendMenu(hMenu, MF_STRING, ID_CONTEXT_UPDATECATALOG, _T("Retrieve/Update Subsonic Catalog"));
 		::AppendMenu(hMenu, MF_STRING, ID_CONTEXT_UPDATEPLAYLIST, _T("Retrieve/Update Subsonic Playlists"));
+		::AppendMenu(hMenu, MF_SEPARATOR, ID_CONTEXT_NOTHING, _T(""));
+		::AppendMenu(hMenu, MF_STRING, ID_CONTEXT_RELOADCACHE, _T("Reload Cache"));
 		
 		int xPos = GET_X_LPARAM(lParam);
 		int yPos = GET_Y_LPARAM(lParam);
