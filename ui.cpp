@@ -26,12 +26,15 @@ LRESULT CSubsonicUi::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*b
 	CTreeViewCtrlEx::ModifyStyle(1, TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS);
 	//CTreeViewCtrlEx::SetExtendedStyle()
 
-	if (Preferences::load_cache_on_startup) {
+	if (Preferences::load_album_cache_on_startup) {
 		// Read cached album catalog
 		SendMessage(m_hWnd, ID_CONTEXT_UPDATECATALOG_DONE, HIWORD(0), LOWORD(0));
+	}
+	if (Preferences::load_playlist_cache_on_startup) {
 		// Read cached playlist
 		SendMessage(m_hWnd, ID_CONTEXT_UPDATEPLAYLIST_DONE, HIWORD(0), LOWORD(0));
 	}
+
 	return lRet;
 }
 

@@ -55,7 +55,7 @@ GUIDELINES DESIGNINFO
 BEGIN
     IDD_PREFERENCES, DIALOG
     BEGIN
-        BOTTOMMARGIN, 183
+        BOTTOMMARGIN, 244
     END
 
     IDD_SEARCH, DIALOG
@@ -74,7 +74,7 @@ END
 // Dialog
 //
 
-IDD_PREFERENCES DIALOGEX 0, 0, 274, 232
+IDD_PREFERENCES DIALOGEX 0, 0, 274, 247
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -99,10 +99,14 @@ BEGIN
     CONTROL         "Download/Show CoverArt",IDC_CHK_DLCOVERART,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,97,99,10
     CONTROL         "Resize CoverArt to:",IDC_CHK_RESIZECOVERART,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,119,97,79,10
     EDITTEXT        IDC_TXT_COVERARTSIZE,198,94,27,14,ES_AUTOHSCROLL | ES_NUMBER
-    PUSHBUTTON      "Clear Offline Cache",IDC_BTN_RESET_CACHE,181,138,80,14
-    PUSHBUTTON      "Clear CoverArt Cache",IDC_BTN_RESET_COVERART_CACHE,93,138,81,14
-    CONTROL         "Load Cache on Foobar startup",IDC_CHK_LOADONSTARTUP,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,117,113,10
+    PUSHBUTTON      "Clear Offline Cache",IDC_BTN_RESET_CACHE,181,140,80,14
+    PUSHBUTTON      "Clear CoverArt Cache",IDC_BTN_RESET_COVERART_CACHE,93,141,81,14
+    CONTROL         "Load Album Cache on Foobar startup",IDC_CHK_LOAD_ALBUM_CACHE_ONSTARTUP,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,114,135,10
+    CONTROL         "<a href=""https://github.com/hypfvieh/foo_subsonic/wiki"">Online Help</a>",IDC_LNK_HELP,
+                    "SysLink",WS_TABSTOP,6,222,60,13
+    CONTROL         "Load Playlist Cache on Foobar startup",IDC_CHK_LOAD_PLAYLIST_CACHE_ONSTARTUP,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,127,137,10
 END
 
 IDD_SEARCH DIALOGEX 0, 0, 563, 254

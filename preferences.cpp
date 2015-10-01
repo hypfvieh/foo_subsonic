@@ -45,10 +45,12 @@ namespace Preferences {
 	const GUID guid_coverart_resize = { 0x4ed09771, 0x2bc5, 0x4f63,{ 0xba, 0xa3, 0x46, 0x18, 0x60, 0xec, 0x28, 0xa } };
 	cfg_bool coverart_resize(guid_coverart_resize, true);
 
-	// other
-	const GUID guid_load_cache_on_startup = { 0xc0f70300, 0x869, 0x4098,{ 0x81, 0xfc, 0xd8, 0x46, 0x38, 0xd9, 0x71, 0x3c } };
-	cfg_bool load_cache_on_startup(guid_load_cache_on_startup, true);
+	// Cache loading
+	const GUID guid_load_album_cache_on_startup = { 0xc0f70300, 0x869, 0x4098,{ 0x81, 0xfc, 0xd8, 0x46, 0x38, 0xd9, 0x71, 0x3c } };
+	cfg_bool load_album_cache_on_startup(guid_load_album_cache_on_startup, true);
 
+	const GUID guid_load_playlist_cache_on_startup = { 0xfbaa3503, 0x1d09, 0x49d0,{ 0x8e, 0x6c, 0x5, 0xe0, 0x5e, 0xa3, 0x87, 0xba } };
+	cfg_bool load_playlist_cache_on_startup(guid_load_playlist_cache_on_startup, true);
 	
 }
 class PreferencesPageInstance : public CDialogImpl<PreferencesPageInstance>, public preferences_page_instance {
@@ -65,7 +67,9 @@ private:
 	CCheckBox use_pass_as_hex;
 	CCheckBox use_coverart_dl;
 	CCheckBox use_coverart_resize;
-	CCheckBox use_load_on_startup;
+
+	CCheckBox use_load_album_cache_on_startup;
+	CCheckBox use_load_playlist_cache_on_startup;
 
 	CButton proxy_settings_no;
 	CButton proxy_settings_system;
@@ -94,9 +98,11 @@ public:
 		COMMAND_HANDLER_EX(IDC_CHK_RESIZECOVERART, EN_UPDATE, OnChanged)
 		COMMAND_HANDLER_EX(IDC_CHK_DLCOVERART, EN_UPDATE, OnChanged)
 		COMMAND_HANDLER_EX(IDC_TXT_COVERARTSIZE, EN_UPDATE, OnChanged)
-		COMMAND_HANDLER_EX(IDC_CHK_LOADONSTARTUP, EN_UPDATE, OnChanged)
+		COMMAND_HANDLER_EX(IDC_CHK_LOAD_ALBUM_CACHE_ONSTARTUP, EN_UPDATE, OnChanged)
+		COMMAND_HANDLER_EX(IDC_CHK_LOAD_PLAYLIST_CACHE_ONSTARTUP, EN_UPDATE, OnChanged)
 		COMMAND_HANDLER(IDC_BTN_RESET_COVERART_CACHE, BN_CLICKED, OnBnClickedBtnResetCoverartCache)
 		COMMAND_HANDLER(IDC_BTN_RESET_CACHE, BN_CLICKED, OnBnClickedBtnResetCache)
+		NOTIFY_HANDLER(IDC_LNK_HELP, NM_CLICK, OnNMClickLnkHelp)
 	END_MSG_MAP()
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
@@ -110,7 +116,8 @@ public:
 		use_selfsignedcerts = GetDlgItem(IDC_CHECK_SELFSIGNED);
 		use_coverart_dl = GetDlgItem(IDC_CHK_DLCOVERART);
 		use_coverart_resize = GetDlgItem(IDC_CHK_RESIZECOVERART);
-		use_load_on_startup = GetDlgItem(IDC_CHK_LOADONSTARTUP);
+		use_load_album_cache_on_startup = GetDlgItem(IDC_CHK_LOAD_ALBUM_CACHE_ONSTARTUP);
+		use_load_playlist_cache_on_startup = GetDlgItem(IDC_CHK_LOAD_PLAYLIST_CACHE_ONSTARTUP);
 
 		use_pass_as_hex = GetDlgItem(IDC_CHK_PASSWORD_AS_HASH);
 
@@ -144,7 +151,8 @@ public:
 		CheckDlgButton(IDC_CHK_DLCOVERART, Preferences::coverart_download);
 		CheckDlgButton(IDC_CHK_RESIZECOVERART, Preferences::coverart_resize);
 
-		CheckDlgButton(IDC_CHK_LOADONSTARTUP, Preferences::load_cache_on_startup);
+		CheckDlgButton(IDC_CHK_LOAD_ALBUM_CACHE_ONSTARTUP, Preferences::load_album_cache_on_startup);
+		CheckDlgButton(IDC_CHK_LOAD_PLAYLIST_CACHE_ONSTARTUP, Preferences::load_playlist_cache_on_startup);
 
 		return 0;
 	}
@@ -192,8 +200,11 @@ public:
 		data = IsDlgButtonChecked(IDC_CHK_RESIZECOVERART) == BST_CHECKED;
 		if (Preferences::coverart_resize != data) return true;
 
-		data = IsDlgButtonChecked(IDC_CHK_LOADONSTARTUP) == BST_CHECKED;
-		if (Preferences::load_cache_on_startup != data) return true;
+		data = IsDlgButtonChecked(IDC_CHK_LOAD_ALBUM_CACHE_ONSTARTUP) == BST_CHECKED;
+		if (Preferences::load_album_cache_on_startup != data) return true;
+
+		data = IsDlgButtonChecked(IDC_CHK_LOAD_PLAYLIST_CACHE_ONSTARTUP) == BST_CHECKED;
+		if (Preferences::load_playlist_cache_on_startup != data) return true;
 
 		return false;
 	}
@@ -235,7 +246,8 @@ public:
 		Preferences::coverart_download = IsDlgButtonChecked(IDC_CHK_DLCOVERART) == BST_CHECKED;
 		Preferences::coverart_resize = IsDlgButtonChecked(IDC_CHK_RESIZECOVERART) == BST_CHECKED;
 
-		Preferences::load_cache_on_startup = IsDlgButtonChecked(IDC_CHK_LOADONSTARTUP) == BST_CHECKED;
+		Preferences::load_album_cache_on_startup = IsDlgButtonChecked(IDC_CHK_LOAD_ALBUM_CACHE_ONSTARTUP) == BST_CHECKED;
+		Preferences::load_playlist_cache_on_startup = IsDlgButtonChecked(IDC_CHK_LOAD_PLAYLIST_CACHE_ONSTARTUP) == BST_CHECKED;
 	}
 
 	void on_change() {
@@ -257,7 +269,8 @@ public:
 
 		CheckDlgButton(IDC_CHK_DLCOVERART, TRUE);
 		CheckDlgButton(IDC_CHK_RESIZECOVERART, TRUE);
-		CheckDlgButton(IDC_CHK_LOADONSTARTUP, TRUE);
+		CheckDlgButton(IDC_CHK_LOAD_ALBUM_CACHE_ONSTARTUP, TRUE);
+		CheckDlgButton(IDC_CHK_LOAD_PLAYLIST_CACHE_ONSTARTUP, TRUE);
 
 		CheckDlgButton(IDC_RADIO_PROXY_NO, TRUE);
 		CheckDlgButton(IDC_RADIO_PROXY_CUSTOM, FALSE);
@@ -289,6 +302,11 @@ public:
 			SqliteCacheDb::getInstance()->clearCache();
 			MessageBox(L"Offline cache cleared.", L"Offline Cache", MB_OK | MB_ICONINFORMATION);
 		}
+		return 0;
+	}
+
+	LRESULT OnNMClickLnkHelp(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL& /*bHandled*/) {
+		ShellExecute(0, L"open", L"https://github.com/hypfvieh/foo_subsonic/wiki", NULL, NULL, SW_SHOW);
 		return 0;
 	}
 };

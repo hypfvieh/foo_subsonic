@@ -42,8 +42,11 @@ namespace Preferences {
 	extern const GUID guid_coverart_resize;
 	extern cfg_bool coverart_resize;
 
-	// Other
-	extern const GUID guid_load_cache_on_startup;
-	extern cfg_bool load_cache_on_startup;
+	// Cache loading
+	extern const GUID guid_load_album_cache_on_startup;
+	extern cfg_bool load_album_cache_on_startup;
+
+	extern const GUID guid_load_playlist_cache_on_startup;
+	extern cfg_bool load_playlist_cache_on_startup;
 
 }
