@@ -52,8 +52,18 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int
 	urlparms = "type=alphabeticalByName&size=";
 	urlparms << size << "&offset=" << offset;
 
+	pfc::string8 progressText = "Retrieving Album List...";
+
 	TiXmlDocument doc;
 	
+
+	if (p_abort.is_aborting()) {
+		console::print("Albumlist retrieval aborted: Stop");
+		progressText = "Canceling";
+		p_status.set_item(progressText);
+		return;
+	}
+
 	if (!connectAndGet(&doc, "getAlbumList2", urlparms)) { // error occoured, we are done
 		return;
 	}
@@ -72,16 +82,24 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int
 					pfc::string8 tmp = "Found artist=";
 					tmp << a.get_artist() << ", album=" << a.get_title() << ", coverArt=" << a.get_coverArt();
 
+					progressText = "Retrieving Album List... || ";
+					progressText << a.get_artist() << " => " << a.get_title();
+					p_status.set_item(progressText);
+
 					console::print(tmp);
 
 					getAlbumTracks(&a, p_abort);
 					if (p_abort.is_aborting()) {
-						console::print("Playlist retrieval aborted");
+						console::print("Albumlist retrieval aborted: Stop loop");
+						progressText = "Canceling";
+						p_status.set_item(progressText);
+
 						break;
 					}
 					SqliteCacheDb::getInstance()->addAlbum(a);
 
 					counter++;
+
 					if (offset == 0) {
 						p_status.set_progress(counter, SUBSONIC_MAX_ALBUMLIST_SIZE);
 					}
@@ -97,6 +115,7 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int
 				// recurse until empty list is returned
 				offset += SUBSONIC_MAX_ALBUMLIST_SIZE;
 				p_status.set_progress(1, 1);
+
 				getAlbumList(p_status, size, offset, p_abort);
 			}
 		}
@@ -110,6 +129,11 @@ void SubsonicLibraryScanner::getAlbumTracks(Album *album, abort_callback &p_abor
 	pfc::string8 urlparms;
 	urlparms = "id=";
 	urlparms << album->get_id();
+
+	if (p_abort.is_aborting()) {
+		console::print("Album Track retrieval aborted: Stop");
+		return;
+	}
 
 	TiXmlDocument doc;
 		
@@ -127,7 +151,7 @@ void SubsonicLibraryScanner::getAlbumTracks(Album *album, abort_callback &p_abor
 					Track* t = new Track();					
 					parseTrackInfo(e, t);
 					if (p_abort.is_aborting()) {
-						console::print("Album retrieval aborted");
+						console::print("Album Track retrieval aborted: Stop loop");
 						break;
 					}
 					album->addTrack(t);										
@@ -143,6 +167,15 @@ void SubsonicLibraryScanner::getAlbumTracks(Album *album, abort_callback &p_abor
 void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status, abort_callback &p_abort) {
 
 	TiXmlDocument doc;
+
+	pfc::string8 progressText;
+
+	if (p_abort.is_aborting()) {
+		progressText = "Canceling";
+		p_status.set_item(progressText);
+		console::print("Playlist retrieval aborted: Stop");
+		return;
+	}
 
 	if (!connectAndGet(&doc, "getPlaylists", "")) { // error occoured, we are done
 		return;
@@ -164,10 +197,16 @@ void SubsonicLibraryScanner::getPlaylists(threaded_process_status &p_status, abo
 					p.set_owner(XmlStrOrDefault(e, "owner", ""));
 					p.set_songcount(XmlIntOrDefault(e, "songCount", 0));
 
+					progressText << "Retrieving playlists... | Name: ";
+					progressText << p.get_name();
+					p_status.set_item(progressText);
+
 					// retrieve playlist entries
 					getPlaylistEntries(&p, p_abort);
 					if (p_abort.is_aborting()) {
-						console::print("Playlist retrieval aborted");
+						progressText = "Canceling";
+						p_status.set_item(progressText);
+						console::print("Playlist retrieval aborted: Stop loop");
 						break;
 					}
 					SqliteCacheDb::getInstance()->addPlaylist(p);
@@ -184,6 +223,11 @@ void SubsonicLibraryScanner::getPlaylistEntries(Playlist *playlist, abort_callba
 	pfc::string8 urlparms;
 	urlparms = "id=";
 	urlparms << playlist->get_id();
+
+	if (p_abort.is_aborting()) {
+		console::print("Playlist Track retrieval aborted: stop");
+		return;
+	}
 
 	TiXmlDocument doc;
 
@@ -202,10 +246,9 @@ void SubsonicLibraryScanner::getPlaylistEntries(Playlist *playlist, abort_callba
 					parseTrackInfo(e, t);
 					playlist->addTrack(t);
 					if (p_abort.is_aborting()) {
-						console::print("Playlist retrieval aborted");
+						console::print("Playlist Track retrieval aborted: stop loop");
 						break;
 					}
-
 				}
 			}
 		}
@@ -279,20 +322,21 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 
 	SqliteCacheDb::getInstance()->getAllAlbums()->clear(); // remove old entries first
 
-	getAlbumList(p_status, size, offset, p_abort);
+	pfc::string8 progressText;
+	progressText = "Retrieving catalog";
 
-	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
+	p_status.set_progress_secondary(1, 3);
+	p_status.set_item(progressText);
+	getAlbumList(p_status, size, offset, p_abort);
 
 	// save our new results
 	p_status.set_title("Saving catalog to cache database (this can take some time)");
+	progressText = "Updating cache (this can take some time)";
+	p_status.set_item(progressText);
 	SqliteCacheDb::getInstance()->saveAlbums(p_status, p_abort);
 
 	// signal the main window that the thread has done fetching
 	SendMessage(window, ID_CONTEXT_UPDATECATALOG_DONE, HIWORD(0), LOWORD(0));
-	DWORD lastError = GetLastError();
-	if (lastError != ERROR_SUCCESS) {
-		console::printf("Got error while sending message to window: %i", lastError);
-	}
 	
 }
 
@@ -301,12 +345,21 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 */
 void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window, threaded_process_status &p_status, abort_callback &p_abort) {
 	SqliteCacheDb::getInstance()->getAllPlaylists()->clear(); // remove old entries
+
+	pfc::string8 progressText;
+	progressText = "Retrieving playlists";
+
+	p_status.set_progress_secondary(1, 3);
+	p_status.set_item(progressText);
+	
 	getPlaylists(p_status, p_abort);
 
 	SetLastError(ERROR_SUCCESS); // reset GLE before SendMessage call
 
 	// save our new results
 	p_status.set_title("Saving playlists to cache database (this can take some time)");
+	progressText = "Updating Cache (this can take some time)";
+	p_status.set_item(progressText);
 	SqliteCacheDb::getInstance()->savePlaylists(p_status, p_abort);
 
 	// signal the main window that the thread has done fetching

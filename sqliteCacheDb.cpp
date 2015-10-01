@@ -149,6 +149,7 @@ void SqliteCacheDb::savePlaylists(threaded_process_status &p_status, abort_callb
 
 	unsigned int prg = 0;
 	p_status.set_progress(prg, playlists.size() + 1);
+	p_status.set_progress_secondary(2, 3);
 
 	SQLite::Transaction transaction(*db);
 	SQLite::Statement query(*db, "INSERT OR REPLACE INTO playlists (id, comment, coverArt, duration, public, name, owner, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);");
@@ -212,6 +213,7 @@ void SqliteCacheDb::savePlaylists(threaded_process_status &p_status, abort_callb
 	}
 	transaction.commit();
 	p_status.set_progress(++prg, playlists.size() + 1);
+	p_status.set_progress_secondary(3, 3);
 }
 
 void SqliteCacheDb::saveAlbums(threaded_process_status &p_status, abort_callback &p_abort) {
@@ -221,6 +223,7 @@ void SqliteCacheDb::saveAlbums(threaded_process_status &p_status, abort_callback
 	unsigned int prg = 0;
 
 	p_status.set_progress(prg, albumlist.size() + 1);
+	p_status.set_progress_secondary(2, 3);
 
 	SQLite::Statement query(*db, "INSERT OR REPLACE INTO albums (id, artist, title, genre, year, coverArt, duration, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);");
 	SQLite::Transaction transaction(*db);
@@ -354,6 +357,7 @@ void SqliteCacheDb::saveAlbums(threaded_process_status &p_status, abort_callback
 	}
 	transaction.commit();
 	p_status.set_progress(++prg, albumlist.size() + 1);
+	p_status.set_progress_secondary(3, 3);
 }
 
 

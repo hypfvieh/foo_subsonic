@@ -158,7 +158,7 @@ LRESULT CSubsonicUi::OnContextCatalogUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, 
 
 	if (result == IDYES) {
 		threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::AlbumQueryThread>(&scanner, m_hWnd),
-			threaded_process::flag_show_progress | threaded_process::flag_show_abort, m_hWnd, "Querying album catalog from Subsonic Server");
+			threaded_process::flag_show_progress_dual | threaded_process::flag_show_item | threaded_process::flag_show_abort, m_hWnd, "Querying album catalog from Subsonic Server");
 	}
 	return 0;
 }
@@ -169,7 +169,7 @@ LRESULT CSubsonicUi::OnContextPlaylistUpdate(WORD /*wNotifyCode*/, WORD /*wID*/,
 
 	if (result == IDYES) {
 		threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::PlaylistQueryThread>(&scanner, m_hWnd),
-			threaded_process::flag_show_progress | threaded_process::flag_show_abort, m_hWnd, "Querying playlist data from Subsonic Server");
+			threaded_process::flag_show_progress_dual | threaded_process::flag_show_item | threaded_process::flag_show_abort, m_hWnd, "Querying playlist data from Subsonic Server");
 	}
 
 	return 0;
