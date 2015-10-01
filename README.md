@@ -7,7 +7,7 @@ I'm not a C++ programmer and just playing around here, so please be careful.
 I except to have a lot of memory leaks and/or doing bad practices here!
 
 ## License
-My code is licensed with the [WTFPL](http://www.wtfpl.org).
+My code is licensed with the [WTFPL](http://www.wtfpl.net).
 
 All used libraries and the foobar SDK are licensed under different license agreements.
 Please look at the specific project for further details.
