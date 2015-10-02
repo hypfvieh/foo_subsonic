@@ -1,19 +1,22 @@
 #include "foo_subsonic.h"
 #include "FakeAlbumArtExtractor.h"
 #include "sqliteCacheDb.h"
-
+#include <fstream>
+#include <iostream>
 const GUID FakeAlbumArtExtractor::class_guid = { 0xe1b99b8c, 0x518a, 0x4ea3,{ 0x89, 0x33, 0xf4, 0xd8, 0x7d, 0x3e, 0x68, 0x13 } };
 
 
 pfc::string8 FakeAlbumArtExtractor::extractPathId(const char* p_path) {
 
+	if (p_path == NULL) {
+		return "";
+	}
+
 	pfc::string url = "^";
 	url += Preferences::connect_url_data;
-
 	std::regex rePort(".*(:[[:digit:]]+).*");
 	std::smatch portmatch;
 	std::string urlwithport = url.c_str();
-
 	if (!std::regex_search(urlwithport, portmatch, rePort)) { // no port given, append the proper default
 		if (url.startsWith("^https://")) {
 			url += ":443";
@@ -39,13 +42,13 @@ pfc::string8 FakeAlbumArtExtractor::extractPathId(const char* p_path) {
 
 	std::string itempath = p_path;
 	if (std::regex_search(itempath, match, re)) { // matches
-		uDebugLog() << "Found matching URL: " << itempath.c_str();
+		uDebugLog() << "Found matching URL: " << itempath.c_str();		
 		if (match.size() >= 5) {
 			uDebugLog() << "id: " << match.str(5).c_str();
 			return match.str(5).c_str();
 		}
-	}
-	return NULL;
+	}	
+	return "";
 }
 
 album_art_extractor_instance_v2::ptr FakeAlbumArtExtractor::open_v2(file_ptr p_filehint, const char *p_path, abort_callback &p_abort) {
@@ -55,6 +58,10 @@ album_art_extractor_instance_v2::ptr FakeAlbumArtExtractor::open_v2(file_ptr p_f
 
 	pfc::string8 trackId = extractPathId(p_path);
 	
+	if (trackId == NULL) {
+		throw exception_album_art_not_found();
+	}
+
 	std::string coverId;
 	SqliteCacheDb::getInstance()->getCoverArtByTrackId(trackId.c_str(), coverId, buffer, buffSize);
 
@@ -95,5 +102,6 @@ album_art_extractor_instance_v2::ptr FakeAlbumArtExtractor::open_v2(file_ptr p_f
 
 
 bool FakeAlbumArtExtractor::is_our_path(const char * p_path, const char * p_extension) {
-	return (extractPathId(p_path) != NULL);
+	pfc::string8 match = extractPathId(p_path);	
+	return (!match.is_empty());
 }
