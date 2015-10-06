@@ -159,6 +159,7 @@ void SqliteCacheDb::savePlaylists(threaded_process_status &p_status, abort_callb
 			break;
 		}
 
+		
 		query.reset();
 
 		query.bind(1, it->get_id());
@@ -188,8 +189,14 @@ void SqliteCacheDb::savePlaylists(threaded_process_status &p_status, abort_callb
 
 				query_track_playlist.exec();
 
+				// update artist
+				SQLite::Statement artist_query(*db, "INSERT OR REPLACE INTO artists (id, artist) VALUES (?1, ?2);");
+				artist_query.bind(1, t->get_artistId());
+				artist_query.bind(2, t->get_artist());
+				artist_query.exec();
+
 				// save track information
-				SQLite::Statement query_track(*db, "INSERT OR REPLACE INTO tracks (id, title, duration, bitRate, contentType, coverArt, genre, suffix, track, year, size, albumId) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12);");
+				SQLite::Statement query_track(*db, "INSERT OR REPLACE INTO tracks (id, title, duration, bitRate, contentType, coverArt, genre, suffix, track, year, size, albumId, artistId) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13);");
 
 				query_track.bind(1, t->get_id());
 				query_track.bind(2, t->get_title());
@@ -203,10 +210,12 @@ void SqliteCacheDb::savePlaylists(threaded_process_status &p_status, abort_callb
 				query_track.bind(10, t->get_year());
 				query_track.bind(11, t->get_size());
 				query_track.bind(12, t->get_parentId());
+				query_track.bind(13, t->get_artistId());
 
 				if (query_track.exec() != 1) {
 					uDebugLog() << "Error while inserting track";
 				}
+
 			}
 		}
 		p_status.set_progress(++prg, playlists.size() + 1);
@@ -225,17 +234,23 @@ void SqliteCacheDb::saveAlbums(threaded_process_status &p_status, abort_callback
 	p_status.set_progress(prg, albumlist.size() + 1);
 	p_status.set_progress_secondary(2, 3);
 
-	SQLite::Statement query(*db, "INSERT OR REPLACE INTO albums (id, artist, title, genre, year, coverArt, duration, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);");
+	SQLite::Statement query(*db, "INSERT OR REPLACE INTO albums (id, artistId, title, genre, year, coverArt, duration, songCount) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);");
 	SQLite::Transaction transaction(*db);
 	for (it = albumlist.begin(); it != albumlist.end(); it++) {
 
 		if (p_abort.is_aborting()) {
 			break;
 		}
+
+		SQLite::Statement artist_query(*db, "INSERT OR REPLACE INTO artists (id, artist) VALUES (?1, ?2);");
+		artist_query.bind(1, it->get_artistid());
+		artist_query.bind(2, it->get_artist());
+		artist_query.exec();
+
 		query.reset();
 
 		query.bind(1, it->get_id());
-		query.bind(2, it->get_artist());
+		query.bind(2, it->get_artistid());
 		query.bind(3, it->get_title());
 		query.bind(4, it->get_genre());
 		query.bind(5, it->get_year());
@@ -284,13 +299,14 @@ void SqliteCacheDb::saveAlbums(threaded_process_status &p_status, abort_callback
 				val[colcount +  9] = std::to_string(t->get_tracknumber()).c_str();
 				val[colcount + 10] = t->get_year();
 				val[colcount + 11] = std::to_string(t->get_size()).c_str();
-				val[colcount + 12] = it->get_id();				
+				val[colcount + 12] = it->get_id();
+				val[colcount + 12] = it->get_artistid();
 
 				if (first) { // create a new query, the first part is done statically as the syntax is slightly different than the following UNION SELECTs
 					first = false;
-					tmp << "INSERT OR REPLACE INTO tracks (id, title, duration, bitRate, contentType, coverArt, genre, suffix, track, year, size, albumId) ";
-					tmp << "SELECT ?1 as id, ?2 as title, ?3 as duration, ?4 as bitRate, ?5 as contentType, ?6 as coverArt, ?7 as genre, ?8 as suffix, ?9 as track, ?10 as year, ?11 as size, ?12 as albumId ";
-					colcount = 12;
+					tmp << "INSERT OR REPLACE INTO tracks (id, title, duration, bitRate, contentType, coverArt, genre, suffix, track, year, size, albumId, artistId) ";
+					tmp << "SELECT ?1 as id, ?2 as title, ?3 as duration, ?4 as bitRate, ?5 as contentType, ?6 as coverArt, ?7 as genre, ?8 as suffix, ?9 as track, ?10 as year, ?11 as size, ?12 as albumId, ?13 as artistId ";
+					colcount = 13;
 
 				}
 				else { // add a new value set
@@ -298,9 +314,9 @@ void SqliteCacheDb::saveAlbums(threaded_process_status &p_status, abort_callback
 						<< ", ?"			<<  (colcount + 4) << ", ?" <<  (colcount + 5) << ", ?" << (colcount + 6)
 						<< ", ?"			<<  (colcount + 7) << ", ?" <<  (colcount + 8) << ", ?" << (colcount + 9)
 						<< ", ?"			<< (colcount + 10) << ", ?" << (colcount + 11) << ", ?"	<< (colcount + 12)
-						<< " ";
+						<< ", ?"			<< (colcount + 13) << " ";
 
-					if (colcount >= SQLITE_LIMIT_VARIABLE_NUMBER || colcount + 12 >= SQLITE_LIMIT_VARIABLE_NUMBER) { // if we reach limit (999) create new query block
+					if (colcount >= SQLITE_LIMIT_VARIABLE_NUMBER || colcount + 13 >= SQLITE_LIMIT_VARIABLE_NUMBER) { // if we reach limit (999) create new query block
 						listEntry[tmp.str()] = val;
 						allInone.push_back(listEntry);
 
@@ -311,7 +327,7 @@ void SqliteCacheDb::saveAlbums(threaded_process_status &p_status, abort_callback
 						colcount = 0; // no columns are used yet
 					}
 					else {
-						colcount += 12; // increase total column count
+						colcount += 13; // increase total column count
 					}
 				}
 			}
@@ -376,11 +392,12 @@ void SqliteCacheDb::parseTrackInfo(Track *t, SQLite::Statement *query_track) {
 	t->set_bitrate(query_track->getColumn(4));
 	t->set_tracknumber(query_track->getColumn(8));
 	t->set_size(query_track->getColumn(10));
+	t->set_artistId(query_track->getColumn(12));
 }
 
 void SqliteCacheDb::getAllAlbumsFromCache() {
 	if (db == NULL) return;
-	SQLite::Statement query(*db, "SELECT id, artist, title, genre, year, coverArt, duration, songCount FROM albums");
+	SQLite::Statement query(*db, "SELECT albums.id, artists.artist, title, genre, year, coverArt, duration, songCount FROM albums, artists WHERE albums.artistId = artists.id");
 
 	while (query.executeStep()) {
 		Album a;
@@ -393,7 +410,7 @@ void SqliteCacheDb::getAllAlbumsFromCache() {
 		a.set_duration(query.getColumn(6));
 		a.set_songCount(query.getColumn(7));
 
-		SQLite::Statement query_track(*db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt FROM tracks WHERE albumId = ?1");
+		SQLite::Statement query_track(*db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt, artistId FROM tracks WHERE albumId = ?1");
 		query_track.bind(1, a.get_id());
 
 		while (query_track.executeStep()) {
@@ -432,18 +449,18 @@ void SqliteCacheDb::getAllPlaylistsFromCache() {
 
 		while (query_track.executeStep()) {
 			const char* trackId = query_track.getColumn(0);
-			SQLite::Statement query_track(*db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt FROM tracks WHERE id = ?1");
+			SQLite::Statement query_track(*db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt, artistId FROM tracks WHERE id = ?1");
 			query_track.bind(1, trackId);
 
 			while (query_track.executeStep()) {
 				Track* t = new Track();
 				parseTrackInfo(t, &query_track);
 
-				SQLite::Statement query_artist(*db, "SELECT artist FROM albums WHERE id = ?1 LIMIT 1");
-				query_artist.bind(1, t->get_parentId());
+				SQLite::Statement query_artist(*db, "SELECT artist FROM artists WHERE id = ?1 LIMIT 1");
+				query_artist.bind(1, t->get_artistId());
 
 				if (query_artist.executeStep()) {
-					t->set_artist(query_artist.getColumn(1));
+					t->set_artist(query_artist.getColumn(0));
 				}
 
 				p.addTrack(t);
@@ -517,6 +534,7 @@ void SqliteCacheDb::clearCache() {
 
 	SQLite::Transaction transaction(*db);
 	db->exec("DROP TABLE coverart;");
+	db->exec("DROP TABLE artists;");
 	db->exec("DROP TABLE albums;");
 	db->exec("DROP TABLE playlist_tracks;");
 	db->exec("DROP TABLE tracks;");

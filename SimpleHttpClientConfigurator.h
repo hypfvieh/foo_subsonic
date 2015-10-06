@@ -2,6 +2,7 @@
 
 #include "foo_subsonic.h"
 #include "simplehttpclient.h"
+#include "logindlg.h"
 
 class SimpleHttpClientConfigurator {
 
@@ -120,6 +121,11 @@ public:
 	This will build the URL using the configured server and add the required parameters like client (c), user (u) and password (p).
 	*/
 	static pfc::string8 buildRequestUrl(const char* restMethod, pfc::string8 urlparams) {
+
+		if (Preferences::password_data.is_empty() || Preferences::username_data.is_empty()) {
+			LoginDialog *dlg = new LoginDialog();
+			dlg->DoModal(core_api::get_main_window(), LPARAM(0));
+		}
 
 		std::string pass = Preferences::password_data.c_str();
 		if (Preferences::check_pass_as_hex_data.get_value()) {

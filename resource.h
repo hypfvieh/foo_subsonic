@@ -4,6 +4,7 @@
 //
 #define IDD_PREFERENCES                 108
 #define IDD_SEARCH                      110
+#define IDD_PASSWORD_DLG                112
 #define IDD_MYPREFERENCES               148
 #define IDC_BOGO1                       1001
 #define IDC_SLIDER1                     1012
@@ -41,16 +42,20 @@
 #define IDC_PASSWORD_LBL                1053
 #define IDC_CHK_LOAD_ALBUM_CACHE_ONSTARTUP 1054
 #define IDC_LNK_HELP                    1055
-#define IDC_CHK_                        1056
 #define IDC_CHK_LOAD_PLAYLIST_CACHE_ONSTARTUP 1056
+#define IDC_LBL_USERNAME                1057
+#define IDC_PASSWORD                    1058
+#define IDC_TXT_USERNAME                1059
+#define IDC_EDIT2                       1060
+#define IDC_TXT_PASSWORD                1060
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        112
+#define _APS_NEXT_RESOURCE_VALUE        114
 #define _APS_NEXT_COMMAND_VALUE         40008
-#define _APS_NEXT_CONTROL_VALUE         1057
+#define _APS_NEXT_CONTROL_VALUE         1061
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

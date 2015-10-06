@@ -80,6 +80,7 @@ namespace XmlHelper {
 		t->set_coverArt(XmlStrOrDefault(e, "coverArt", "0"));
 		t->set_title(XmlStrOrDefault(e, "title", ""));
 		t->set_suffix(XmlStrOrDefault(e, "suffix", ""));
+		t->set_artistId(XmlStrOrDefault(e, "artistId", ""));
 
 		// build and add url for streaming
 		pfc::string8 idparam = "id=";

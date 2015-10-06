@@ -292,10 +292,30 @@ bool SubsonicLibraryScanner::checkForError(TiXmlDocument* xml) {
 	TiXmlElement* rootNode = xml->FirstChildElement("subsonic-response");
 	if (rootNode) {
 		const char* status = rootNode->Attribute("status");
-		if (status == "failed") { // this is failed status
+		if (strcmp(status, "failed") == 0) { // this is failed status		 
 			const char* errorCode = rootNode->FirstChildElement("error")->Attribute("code");
 			const char* errorMsg = rootNode->FirstChildElement("error")->Attribute("message");
 			parsingError(errorCode, errorMsg);
+
+			if (strcmp(errorCode, "40") == 0 || strcmp(errorCode, "50") == 0) { // errorCode 40 = wrong user/pass; 50 = user has no permission
+				// if no permission or invalid login data, reset the data to "none" so the user can enter new data the next time
+				Preferences::username_data = "";
+				Preferences::password_data = "";
+			}
+
+			std::string tmp = "Error while querying subsonic server, response was:\r\n\r\n";
+			tmp += "ErrorCode: ";
+			tmp += errorCode;
+			tmp += "\r\nMessage:";
+			tmp += errorMsg;
+
+			size_t strSize = tmp.size() + 1;
+			wchar_t* wChar = new wchar_t[strSize];
+
+			size_t outSize;
+			mbstowcs_s(&outSize, wChar, strSize, tmp.c_str(), strSize - 1);
+
+			MessageBox(core_api::get_main_window(), wChar, L"Query Error", MB_OK | MB_ICONERROR);
 			return FALSE;
 		}
 		return TRUE;
@@ -307,7 +327,7 @@ bool SubsonicLibraryScanner::checkForError(TiXmlDocument* xml) {
 /*
 	If subsonic returned some kind of error, log it to foobar console.
 */
-void SubsonicLibraryScanner::parsingError(const char* message, const char* errCode) {
+void SubsonicLibraryScanner::parsingError(const char* errCode, const char* message) {
 	console::printf("SubSonic Remote Error (ErrCode=%s): %s", errCode, message);
 }
 
@@ -337,7 +357,6 @@ void SubsonicLibraryScanner::retrieveAllAlbums(HWND window, threaded_process_sta
 
 	// signal the main window that the thread has done fetching
 	SendMessage(window, ID_CONTEXT_UPDATECATALOG_DONE, HIWORD(0), LOWORD(0));
-	
 }
 
 /*
@@ -364,18 +383,10 @@ void SubsonicLibraryScanner::retrieveAllPlaylists(HWND window, threaded_process_
 
 	// signal the main window that the thread has done fetching
 	SendMessage(window, ID_CONTEXT_UPDATEPLAYLIST_DONE, HIWORD(0), LOWORD(0));
-	DWORD lastError = GetLastError();
-	if (lastError != ERROR_SUCCESS) {
-		console::printf("Got error while sending message to window: %i", lastError);
-	}
 }
 
 void SubsonicLibraryScanner::retrieveAllSearchResults(HWND window, threaded_process_status &p_status, const char* url) {	
 	getSearchResults(url);
 
 	SendMessage(window, ID_SEARCH_DONE, HIWORD(0), LOWORD(0));
-	DWORD lastError = GetLastError();
-	if (lastError != ERROR_SUCCESS) {
-		console::printf("Got error while sending message to window: %i", lastError);
-	}
 }

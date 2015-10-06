@@ -302,7 +302,7 @@ void CSubsonicUi::populateTreeWithPlaylists(std::list<Playlist>* playlists) {
 		snprintf(playtime, 20, "%02d:%02d:%02d", hours, minutes, seconds);
 
 		pfc::string8 tmp = it->get_name();
-		tmp << "<Len: " << playtime << ">";
+		tmp << " <Len: " << playtime << ">";
 
 		pfc::stringcvt::string_wide_from_utf8 playlistName(tmp);
 
