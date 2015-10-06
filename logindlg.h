@@ -33,6 +33,13 @@ public:
 		txt_username.Attach(GetDlgItem(IDC_TXT_USERNAME));
 		txt_password.Attach(GetDlgItem(IDC_TXT_PASSWORD));
 		
+		if (!Preferences::username_data.is_empty()) {
+			uSetWindowText(txt_username, Preferences::username_data);
+		}
+		if (!Preferences::password_data.is_empty()) {
+			uSetWindowText(txt_password, Preferences::password_data);
+		}
+
 		return true;
 	}
 
