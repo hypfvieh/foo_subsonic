@@ -143,6 +143,15 @@ bool SqliteCacheDb::getTrackDetailsByUrl(const char* url, Track &t) {
 	return FALSE;
 }
 
+void SqliteCacheDb::getAlbumById(const char* id, Album &a) {
+	std::list<Album>::iterator it;
+	for (it = albumlist.begin(); it != albumlist.end(); it++) {
+		if (strcmp(it->get_id().c_str(), id) == 0) {
+			a = *it;
+		}
+	}
+}
+
 void SqliteCacheDb::savePlaylists(threaded_process_status &p_status, abort_callback &p_abort) {
 	if (db == NULL) return;
 	std::list<Playlist>::iterator it;
@@ -397,7 +406,7 @@ void SqliteCacheDb::parseTrackInfo(Track *t, SQLite::Statement *query_track) {
 
 void SqliteCacheDb::getAllAlbumsFromCache() {
 	if (db == NULL) return;
-	SQLite::Statement query(*db, "SELECT albums.id, artists.artist, title, genre, year, coverArt, duration, songCount FROM albums, artists WHERE albums.artistId = artists.id");
+	SQLite::Statement query(*db, "SELECT albums.id, artists.artist, title, genre, year, coverArt, duration, songCount, artistId FROM albums, artists WHERE albums.artistId = artists.id");
 
 	while (query.executeStep()) {
 		Album a;
@@ -409,6 +418,7 @@ void SqliteCacheDb::getAllAlbumsFromCache() {
 		a.set_coverArt(query.getColumn(5));
 		a.set_duration(query.getColumn(6));
 		a.set_songCount(query.getColumn(7));
+		a.set_artistid(query.getColumn(8));
 
 		SQLite::Statement query_track(*db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt, artistId FROM tracks WHERE albumId = ?1");
 		query_track.bind(1, a.get_id());

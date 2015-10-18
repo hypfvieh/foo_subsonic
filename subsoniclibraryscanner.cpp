@@ -22,6 +22,7 @@ BOOL SubsonicLibraryScanner::connectAndGet(TiXmlDocument* doc, const char* restM
 		return FALSE;
 	}
 	pfc::string8 url = SimpleHttpClientConfigurator::buildRequestUrl(restMethod, urlparams);
+	uDebugLog() << "connectAndGet->URL: " << url;
 	SimpleHttpClientConfig cliConfig;
 
 	if (SimpleHttpClientConfigurator::createSimpleHttpClientConfigFromPreferences(cliConfig)) {
@@ -64,13 +65,13 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int
 		return;
 	}
 
-	if (!connectAndGet(&doc, "getAlbumList2", urlparms)) { // error occoured, we are done
+	if (!connectAndGet(&doc, "getAlbumList", urlparms)) { // error occoured, we are done
 		return;
 	}
 
 	TiXmlElement* rootNode = doc.FirstChildElement("subsonic-response");
 	if (rootNode) {
-		TiXmlElement* firstChild = rootNode->FirstChildElement("albumList2");
+		TiXmlElement* firstChild = rootNode->FirstChildElement("albumList");
 		if (firstChild) {
 			if (!firstChild->NoChildren()) { // list is not empty
 				unsigned int counter = 0;
@@ -155,6 +156,42 @@ void SubsonicLibraryScanner::getAlbumTracks(Album *album, abort_callback &p_abor
 						break;
 					}
 					album->addTrack(t);										
+				}
+			}
+		}
+	}
+}
+
+void SubsonicLibraryScanner::getAlbumAndTracksByArtistId(const char *artist_id, abort_callback &p_abort) {
+	pfc::string8 urlparms;
+	urlparms = "id=";
+	urlparms << artist_id;
+
+	if (p_abort.is_aborting()) {
+		console::print("Artist retrieval aborted: Stop");
+		return;
+	}
+
+	TiXmlDocument doc;
+
+	if (!connectAndGet(&doc, "getArtist", urlparms)) { // error occoured, we are done
+		return;
+	}
+
+	TiXmlElement* rootNode = doc.FirstChildElement("subsonic-response");
+	if (rootNode) {
+		TiXmlElement* firstChild = rootNode->FirstChildElement("artist");
+		if (firstChild) {
+			if (!firstChild->NoChildren()) { // list is not empty
+
+				for (TiXmlElement* e = firstChild->FirstChildElement("album"); e != NULL; e = e->NextSiblingElement("album")) {
+					
+					Album a;
+					SqliteCacheDb::getInstance()->getAlbumById(XmlStrOrDefault(e, "id", "unknown_error"), a);
+					a.getTracks()->clear(); // remove previously stored tracks
+					uDebugLog() << "Updating Album: " << a.get_title();
+
+					getAlbumTracks(&a, p_abort); // add the new tracks
 				}
 			}
 		}
@@ -389,4 +426,22 @@ void SubsonicLibraryScanner::retrieveAllSearchResults(HWND window, threaded_proc
 	getSearchResults(url);
 
 	SendMessage(window, ID_SEARCH_DONE, HIWORD(0), LOWORD(0));
+}
+
+void SubsonicLibraryScanner::retrieveArtistUpdate(HWND window, threaded_process_status &p_status, abort_callback &p_abort, const char* artistId) {
+
+	pfc::string8 progressText;
+	progressText = "Updating Artist record";
+
+	p_status.set_progress_secondary(1, 3);
+	p_status.set_item(progressText);
+
+	getAlbumAndTracksByArtistId(artistId, p_abort);
+
+	p_status.set_title("Updating artist record in cache database (this can take some time)");
+	progressText = "Updating Cache (this can take some time)";
+	p_status.set_item(progressText);
+	SqliteCacheDb::getInstance()->saveAlbums(p_status, p_abort);
+
+	SendMessage(window, ID_CONTEXT_UPDATEARTIST_DONE, HIWORD(0), LOWORD(0));
 }

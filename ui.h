@@ -19,8 +19,10 @@ namespace foo_subsonic {
 			MESSAGE_HANDLER(WM_CONTEXTMENU, OnRButtonDown);
 			MESSAGE_HANDLER(ID_CONTEXT_UPDATECATALOG_DONE, OnContextCatalogUpdateDone);
 			MESSAGE_HANDLER(ID_CONTEXT_UPDATEPLAYLIST_DONE, OnContextPlaylistUpdateDone);
+			MESSAGE_HANDLER(ID_CONTEXT_UPDATEARTIST_DONE, OnContextArtistUpdateDone);
 			COMMAND_ID_HANDLER(ID_CONTEXT_UPDATECATALOG, OnContextCatalogUpdate);
 			COMMAND_ID_HANDLER(ID_CONTEXT_UPDATEPLAYLIST, OnContextPlaylistUpdate);
+			COMMAND_ID_HANDLER(ID_CONTEXT_UPDATEARTIST, OnContextArtistUpdate);
 			COMMAND_ID_HANDLER(ID_CONTEXT_SEARCHDIALOG, OnSearchDialogShow);
 			COMMAND_ID_HANDLER(ID_CONTEXT_RELOADCACHE, OnReloadCache);
 			COMMAND_ID_HANDLER(TVN_BEGINDRAG, foo);
@@ -43,11 +45,13 @@ namespace foo_subsonic {
 
 		LRESULT OnContextCatalogUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT OnContextPlaylistUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+		LRESULT OnContextArtistUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT OnSearchDialogShow(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 		LRESULT OnReloadCache(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 
 		LRESULT OnContextCatalogUpdateDone(UINT, WPARAM, LPARAM, BOOL&);
 		LRESULT OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL&);
+		LRESULT OnContextArtistUpdateDone(UINT, WPARAM, LPARAM, BOOL&);
 	
 		LRESULT OnBeginDrag(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/);
 		LRESULT OnDrag(int idCtrl, LPNMHDR pnmh, BOOL& bHandled);

@@ -75,6 +75,7 @@ public:
 	void getCoverArtByTrackId(const char* trackId, std::string &out_coverId, char* &coverArtData, unsigned int &dataLength);
 
 	bool getTrackDetailsByUrl(const char* url, Track &t);
+	void getAlbumById(const char* id, Album &a);
 
 	void clearCoverArtCache();
 	void clearCache();

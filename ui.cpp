@@ -3,9 +3,11 @@
 #include "subsoniclibraryscanner.h"
 #include "albumQueryThread.h"
 #include "playlistQueryThread.h"
+#include "artistUpdateThread.h"
 #include "sqliteCacheDb.h"
 #include "playlistupdater.h"
 #include "search.h"
+#include "artist.h"
 
 
 using namespace foo_subsonic;
@@ -60,6 +62,20 @@ LRESULT CSubsonicUi::OnContextMenu(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL
 	HMENU hMenu = ::CreatePopupMenu();
 
 	if (NULL != hMenu) {
+
+		HTREEITEM selected = GetSelectedItem();
+
+		if ((selected != NULL)) {
+			DWORD_PTR ptr = GetItemData(selected);
+			if (ptr != NULL) {
+				CoreEntity* coreType = reinterpret_cast<CoreEntity*>(ptr);
+				if (coreType->get_type() == ENTRY_TYPE_ARTIST) { // Artist
+					::AppendMenu(hMenu, MF_STRING, ID_CONTEXT_UPDATEARTIST, _T("Update selected Artist"));
+					::AppendMenu(hMenu, MF_SEPARATOR, ID_CONTEXT_NOTHING, _T(""));
+				}
+			}
+		}
+
 		::AppendMenu(hMenu, MF_STRING, ID_CONTEXT_SEARCHDIALOG, _T("Search"));
 		::AppendMenu(hMenu, MF_SEPARATOR, ID_CONTEXT_NOTHING, _T(""));
 		::AppendMenu(hMenu, MF_STRING, ID_CONTEXT_UPDATECATALOG, _T("Retrieve/Update Subsonic Catalog"));
@@ -178,6 +194,31 @@ LRESULT CSubsonicUi::OnContextPlaylistUpdate(WORD /*wNotifyCode*/, WORD /*wID*/,
 	return 0;
 }
 
+LRESULT CSubsonicUi::OnContextArtistUpdate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	const int result = MessageBox(L"Are you sure you want to update the selected artist and all albums/tracks?", L"Update artist", MB_YESNO | MB_ICONQUESTION);
+
+	if (result == IDYES) {
+		HTREEITEM selected = GetSelectedItem();
+
+		if ((selected != NULL)) {
+			DWORD_PTR ptr = GetItemData(selected);
+			if (ptr == NULL) {
+				return 0;
+			}
+			CoreEntity* coreType = reinterpret_cast<CoreEntity*>(ptr);
+			if (coreType->get_type() == ENTRY_TYPE_ARTIST) { // Artist
+				
+				if (!coreType->get_id().is_empty()) {
+					threaded_process::g_run_modeless(new service_impl_t<foo_subsonic::ArtistUpdateThread>(&scanner, m_hWnd, coreType->get_id()),
+						threaded_process::flag_show_progress_dual | threaded_process::flag_show_item | threaded_process::flag_show_abort, m_hWnd, "Querying artist data from Subsonic Server");
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
 LRESULT CSubsonicUi::OnSearchDialogShow(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
 
 	new SearchDialog(m_callback->query_std_color(ui_color_text), m_callback->query_std_color(ui_color_background));
@@ -272,6 +313,9 @@ void CSubsonicUi::populateTreeWithAlbums(std::list<Album>* albumList) {
 			HTREEITEM artistRoot = InsertItem(artistName, rootNode, TVI_LAST); // add artist as new entry
 			HTREEITEM albumNode = InsertItem(albumName, artistRoot, TVI_LAST); // add the current album as entry to artist
 			
+			Artist *artist = new Artist(it->get_artistid());
+			SetItemData(artistRoot, (DWORD_PTR)artist); // attach artist details
+
 			std::list<Track*>* trackList = it->getTracks();
 			addTracksToTreeNode(trackList, albumNode, true, false);
 
@@ -325,9 +369,14 @@ LRESULT CSubsonicUi::OnContextCatalogUpdateDone(UINT, WPARAM, LPARAM, BOOL&) {
 	return 0;
 }
 
-LRESULT CSubsonicUi::OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL &)
-{	
+LRESULT CSubsonicUi::OnContextPlaylistUpdateDone(UINT, WPARAM, LPARAM, BOOL &) {	
 	populateTreeWithPlaylists(SqliteCacheDb::getInstance()->getAllPlaylists());
+
+	return 0;
+}
+
+LRESULT CSubsonicUi::OnContextArtistUpdateDone(UINT, WPARAM, LPARAM, BOOL &) {
+	populateTreeWithAlbums(SqliteCacheDb::getInstance()->getAllAlbums());
 
 	return 0;
 }

@@ -103,6 +103,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="artistUpdateThread.cpp" />
     <ClCompile Include="FakeAlbumArtExtractor.cpp" />
     <ClCompile Include="initquit.cpp" />
     <ClCompile Include="main.cpp" />
@@ -123,6 +124,8 @@
     <ClInclude Include="album.h" />
     <ClInclude Include="AlbumArtExtractorInstanceHttp.h" />
     <ClInclude Include="album_art.h" />
+    <ClInclude Include="artist.h" />
+    <ClInclude Include="artistUpdateThread.h" />
     <ClInclude Include="CoreEntity.h" />
     <ClInclude Include="FakeAlbumArtExtractor.h" />
     <ClInclude Include="foo_subsonic.h" />
