@@ -15,9 +15,9 @@ void SqliteCacheDb::loadOrCreateDb() {
 	userDir += "\\foo_subsonic_cache.db";
 
 	userDir = userDir.replace("file://", "");
-
+	
 	db = new SQLite::Database(userDir.c_str(), SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
-
+	
 	if (db != NULL) {
 		createTableStructure();
 		getAllAlbumsFromCache();
@@ -299,17 +299,17 @@ void SqliteCacheDb::saveAlbums(threaded_process_status &p_status, abort_callback
 
 				val[colcount +  1] = t->get_id();
 				val[colcount +  2] = t->get_title();
-				val[colcount +  3] = std::to_string(t->get_duration()).c_str();
-				val[colcount +  4] = std::to_string(t->get_bitrate()).c_str();
+				val[colcount +  3] = t->get_duration();
+				val[colcount +  4] = t->get_bitrate();
 				val[colcount +  5] = t->get_contentType();
 				val[colcount +  6] = t->get_coverArt();
 				val[colcount +  7] = t->get_genre();
 				val[colcount +  8] = t->get_suffix();
-				val[colcount +  9] = std::to_string(t->get_tracknumber()).c_str();
+				val[colcount +  9] = t->get_tracknumber();
 				val[colcount + 10] = t->get_year();
-				val[colcount + 11] = std::to_string(t->get_size()).c_str();
+				val[colcount + 11] = t->get_size();
 				val[colcount + 12] = it->get_id();
-				val[colcount + 12] = it->get_artistid();
+				val[colcount + 13] = it->get_artistid();
 
 				if (first) { // create a new query, the first part is done statically as the syntax is slightly different than the following UNION SELECTs
 					first = false;
@@ -387,20 +387,19 @@ void SqliteCacheDb::saveAlbums(threaded_process_status &p_status, abort_callback
 
 
 void SqliteCacheDb::parseTrackInfo(Track *t, SQLite::Statement *query_track) {
+
 	t->set_id(query_track->getColumn(0));
 	t->set_parentId(query_track->getColumn(1));
 	t->set_title(query_track->getColumn(2));
+	t->set_duration(query_track->getColumn(3));
+	t->set_bitrate(query_track->getColumn(4));
 	t->set_contentType(query_track->getColumn(5));
 	t->set_genre(query_track->getColumn(6));
 	t->set_suffix(query_track->getColumn(7));
-	t->set_year(query_track->getColumn(9));
-	t->set_coverArt(query_track->getColumn(11));
-
-
-	t->set_duration(query_track->getColumn(3));
-	t->set_bitrate(query_track->getColumn(4));
 	t->set_tracknumber(query_track->getColumn(8));
+	t->set_year(query_track->getColumn(9));
 	t->set_size(query_track->getColumn(10));
+	t->set_coverArt(query_track->getColumn(11));
 	t->set_artistId(query_track->getColumn(12));
 }
 
@@ -421,6 +420,7 @@ void SqliteCacheDb::getAllAlbumsFromCache() {
 		a.set_artistid(query.getColumn(8));
 
 		SQLite::Statement query_track(*db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt, artistId FROM tracks WHERE albumId = ?1");
+		uDebugLog() << "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt, artistId FROM tracks WHERE albumId = " << a.get_id();
 		query_track.bind(1, a.get_id());
 
 		while (query_track.executeStep()) {
@@ -558,5 +558,30 @@ void SqliteCacheDb::clearCache() {
 	albumlist.clear();
 	playlists.clear();
 	urlToTrackMap.clear();
-
 }
+
+void SqliteCacheDb::checkMetaInfo() {
+	SQLite::Statement query(*db, "SELECT * FROM metainfo");
+
+	while (query.executeStep()) {
+		std::string key = query.getColumn(0);
+		std::string val = query.getColumn(1);
+		if (strcmp(key.c_str(), SQL_TABLE_VERSION_KEY.c_str()) == 0) {
+			if (isInteger(val)) {
+				int valInt = atoi(val.c_str());
+				if (valInt != SQL_TABLE_VERSION) {
+					MessageBox(NULL, L"Your local subsonic cache database is not compatible with the current plugin version.\r\nThe old database will be removed and you have to re-query your catalog/playlists!", L"Cache outdated", MB_OK | MB_ICONINFORMATION);
+					
+					if (db != NULL) {
+						std::wstring dbFile = s2ws(db->getFilename());						
+						db->~Database(); // destory handle
+						DeleteFile(dbFile.c_str());
+						instance = new SqliteCacheDb();
+					}
+				}
+			}
+		}
+	}
+}
+
+

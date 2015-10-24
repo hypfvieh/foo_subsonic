@@ -5,7 +5,13 @@
 #include "playlist.h"
 #include <map>
 
-#define SQL_TABLE_CREATE_SIZE 13
+#define SQL_TABLE_CREATE_SIZE 15
+#define SQL_TABLE_VERSION 2
+
+const std::string SQL_TABLE_VERSION_KEY = "version";
+const std::string SQL_TABLE_VERSION_STR = std::to_string(SQL_TABLE_VERSION);
+
+const std::string SQL_VERSION_INFO = "INSERT OR REPLACE INTO metainfo (infokey, infovalue) VALUES ('" + SQL_TABLE_VERSION_KEY + "','" + SQL_TABLE_VERSION_STR + "')";
 
 class SqliteCacheDb {
 
@@ -31,7 +37,9 @@ private:
 
 	void SqliteCacheDb::parseTrackInfo(Track *t, SQLite::Statement *query_track);
 
-	char* sql_table_create[SQL_TABLE_CREATE_SIZE] = {
+	const char* sql_table_create[SQL_TABLE_CREATE_SIZE] = {
+		"CREATE TABLE IF NOT EXISTS metainfo (infokey TEXT PRIMARY KEY, infovalue TEXT)",
+		SQL_VERSION_INFO.c_str(),
 		"CREATE TABLE IF NOT EXISTS artists (id TEXT PRIMARY KEY, artist TEXT)",
 		"CREATE TABLE IF NOT EXISTS albums (id TEXT PRIMARY KEY, artistId TEXT, title TEXT, genre TEXT, year TEXT, coverArt TEXT, duration INT, songCount INT)",
 		"CREATE TABLE IF NOT EXISTS tracks (id TEXT PRIMARY KEY, albumId TEXT, title TEXT, duration INT, bitrate INT, contentType TEXT, genre TEXT, suffix TEXT, track INT, year TEXT, size INT, coverArt TEXT, artistId TEXT)",
@@ -47,6 +55,28 @@ private:
 		"CREATE INDEX IF NOT EXISTS playlist_id_index ON playlists(id)"
 	};
 	
+	bool isInteger(const std::string & s)
+	{
+		if (s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false;
+
+		char * p;
+		strtol(s.c_str(), &p, 10);
+
+		return (*p == 0);
+	}
+
+	std::wstring s2ws(const std::string& s)
+	{
+		int len;
+		int slength = (int)s.length() + 1;
+		len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+		wchar_t* buf = new wchar_t[len];
+		MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+		std::wstring r(buf);
+		delete[] buf;
+		return r;
+	}
+
 	void loadOrCreateDb();
 	void createTableStructure();
 	
@@ -81,4 +111,6 @@ public:
 	void clearCache();
 
 	void reloadCache();
+
+	void checkMetaInfo();
 };

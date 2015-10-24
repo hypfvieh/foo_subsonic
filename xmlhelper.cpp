@@ -64,11 +64,11 @@ namespace XmlHelper {
 		if (t == nullptr) {
 			return;
 		}
-		t->set_duration(XmlIntOrDefault(e, "duration", 0));
-		t->set_tracknumber(XmlIntOrDefault(e, "track", 0));
+		t->set_duration(XmlStrOrDefault(e, "duration", "0"));
+		t->set_tracknumber(XmlStrOrDefault(e, "track", "0"));
 		t->set_parentId(XmlStrOrDefault(e, "parent", "0"));
-		t->set_bitrate(XmlIntOrDefault(e, "bitRate", 0));
-		t->set_size(XmlIntOrDefault(e, "size", 0));
+		t->set_bitrate(XmlStrOrDefault(e, "bitRate", "0"));
+		t->set_size(XmlStrOrDefault(e, "size", "0"));
 		t->set_year(XmlStrOrDefault(e, "year", "0"));
 
 		t->set_id(XmlStrOrDefault(e, "id", ""));

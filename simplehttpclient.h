@@ -8,6 +8,13 @@
 #define PROXY_SYSTEM 1
 #define PROXY_CUSTOM 2
 
+#define LOG_LEVEL_TRACE 0
+#define LOG_LEVEL_DEBUG 1
+#define LOG_LEVEL_INFO 2
+#define LOG_LEVEL_WARN 3
+#define LOG_LEVEL_ERROR 4
+#define LOG_LEVEL_FATAL 5
+
 /*
 	Container class for configuration of SimpleHTTPClient
 */
@@ -129,7 +136,7 @@ public:
 			WINHTTP_FLAG_ASYNC);
 		if (!m_hSession)
 		{
-			return report_failure("Error opening session");
+			return report_failure_debug("Error opening session");
 		}
 
 		// Set timeouts.
@@ -141,7 +148,7 @@ public:
 				milliseconds,
 				milliseconds))
 			{
-				return report_failure("Error setting timeouts");
+				return report_failure_debug("Error setting timeouts");
 			}
 		}
 
@@ -151,7 +158,7 @@ public:
 			DWORD maxConnections = 1;
 			if (!WinHttpSetOption(m_hSession, WINHTTP_OPTION_MAX_CONNS_PER_SERVER, &maxConnections, sizeof(maxConnections)))
 			{
-				return report_failure("Error setting options");
+				return report_failure_debug("Error setting options");
 			}
 		}
 
@@ -164,7 +171,7 @@ public:
 
 		if (m_hConnection == nullptr)
 		{
-			return report_failure("Error opening connection");
+			return report_failure_debug("Error opening connection");
 		}
 
 		return S_OK;
@@ -319,7 +326,7 @@ public:
 			WINHTTP_FLAG_ESCAPE_DISABLE | (m_url->isHttps ? WINHTTP_FLAG_SECURE : 0));
 		if (m_request_handle == nullptr)
 		{
-			report_failure("WinHttpOpenRequest Error");
+			report_failure_debug("WinHttpOpenRequest Error");
 			return;
 		}
 
@@ -332,7 +339,7 @@ public:
 				sizeof(WINHTTP_PROXY_INFO));
 			if (!result)
 			{
-				report_failure("Setting proxy options");
+				report_failure_debug("Setting proxy options");
 				return;
 			}
 		}
@@ -352,22 +359,36 @@ public:
 				sizeof(data));
 			if (!result)
 			{
-				report_failure("Setting ignore server certificate verification");
+				report_failure_debug("Setting ignore server certificate verification");
 				return;
 			}
 		}
 
 		if (!WinHttpSendRequest(m_request_handle, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0)) {
-			report_failure("Send Request");
+			report_failure_debug("Send Request");
 			return;
 		}
   
 		unsigned long size;
 		if (!WinHttpReceiveResponse(m_request_handle, NULL) || !WinHttpQueryDataAvailable(m_request_handle, &size)) {
-			report_failure("Receiving Response");
+			report_failure_debug("Receiving Response");
 			return;
 		}
 		
+		DWORD dwStatusCode = 0;
+		DWORD dwSize = sizeof(dwStatusCode);
+
+		WinHttpQueryHeaders(m_request_handle,
+			WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+			WINHTTP_HEADER_NAME_BY_INDEX,
+			&dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX);
+
+		if (dwStatusCode == 404 || dwStatusCode == 401 || dwStatusCode == 503) {
+			char foo[50];
+			snprintf(foo, 100, "%s: %d", "Unable to retrieve data, HTTP Error", dwStatusCode);
+			report_failure(LOG_LEVEL_FATAL, foo);
+		}
+
 		while (size > 0) {
 			char *tmp = new char[size];
 			unsigned long downloaded;
@@ -413,12 +434,23 @@ private:
 	{
 		return m_client_config;
 	}
-	unsigned long report_failure(const char* errorMessage)
+	unsigned long report_failure(int lvl, const char* errorMessage)
 	{
 		DWORD err = GetLastError();
 		console::printf("SimpleHttpClient [ERR] (%i): %s", err, errorMessage);
 
+		if (lvl == LOG_LEVEL_ERROR) {
+			MessageBoxA(NULL, errorMessage, "Error while connecting", MB_OK | MB_ICONERROR);
+		}
+		else if (lvl == LOG_LEVEL_FATAL) {
+			MessageBoxA(NULL, errorMessage, "FATAL ERROR while connecting", MB_OK | MB_ICONERROR);
+		}
+
 		return err;
+	}
+
+	unsigned long report_failure_debug(const char* errorMessage) {
+		return report_failure(LOG_LEVEL_DEBUG, errorMessage);
 	}
 };
 

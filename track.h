@@ -4,17 +4,17 @@
 #include "CoreEntity.h"
 
 class Track : public CoreEntity {
-	MEMBER(int, duration)
-	MEMBER(int, tracknumber)
+	STRING_MEMBER(duration)
+	STRING_MEMBER(tracknumber)
 	STRING_MEMBER(title)
 	STRING_MEMBER(streamUrl)
 	STRING_MEMBER(parentId)
 	STRING_MEMBER(artistId)
 	STRING_MEMBER(artist)
 	STRING_MEMBER(year)
-	MEMBER(int, bitrate)
+	STRING_MEMBER(bitrate)
 	STRING_MEMBER(contentType)
-	MEMBER(int, size)
+	STRING_MEMBER(size)
 	STRING_MEMBER(genre)
 	STRING_MEMBER(suffix)
 	STRING_MEMBER(album)
@@ -23,10 +23,10 @@ class Track : public CoreEntity {
 public:
 	Track()
 		: CoreEntity(ENTRY_TYPE_TRACK),
-		duration(0),
-		bitrate(0),
-		size(0),
-		tracknumber(0) {}
+		duration("0"),
+		bitrate("0"),
+		size("0"),
+		tracknumber("0") {}
 
 	~Track() {
 

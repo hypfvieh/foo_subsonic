@@ -34,7 +34,7 @@ BOOL SubsonicLibraryScanner::connectAndGet(TiXmlDocument* doc, const char* restM
 
 		cli.open(url.c_str());
 		cli.send_request(buffer, buffSize);	
-			
+		
 		// Parse	
 		doc->Parse(buffer, 0, TIXML_ENCODING_UTF8);
 		return checkForError(doc);
@@ -117,7 +117,7 @@ void SubsonicLibraryScanner::getAlbumList(threaded_process_status &p_status, int
 				offset += SUBSONIC_MAX_ALBUMLIST_SIZE;
 				p_status.set_progress(1, 1);
 
-				getAlbumList(p_status, size, offset, p_abort);
+			    getAlbumList(p_status, size, offset, p_abort);
 			}
 		}
 	}

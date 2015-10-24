@@ -243,13 +243,14 @@ void CSubsonicUi::addTracksToTreeNode(std::list<Track*>* trackList, HTREEITEM al
 	for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
 		pfc::stringcvt::string_wide_from_utf8 trackName((*trackIterator)->get_title());
 		pfc::stringcvt::string_wide_from_utf8 artistName((*trackIterator)->get_artist());
+		pfc::stringcvt::string_wide_from_utf8 trackNumber((*trackIterator)->get_tracknumber());
 		
 		wchar_t track[250];
 		if (withTrackNumber && withArtistName) {
-			swprintf(track, sizeof(track), L"%i) %s - %s", (*trackIterator)->get_tracknumber(), artistName.get_ptr(), trackName.get_ptr());
+			swprintf(track, sizeof(track), L"%s) %s - %s", trackNumber.get_ptr(), artistName.get_ptr(), trackName.get_ptr());
 		}
 		else if (withTrackNumber) {
-			swprintf(track, sizeof(track), L"%i) %s", (*trackIterator)->get_tracknumber(), trackName.get_ptr());
+			swprintf(track, sizeof(track), L"%s) %s", trackNumber.get_ptr(), trackName.get_ptr());
 		}
 		else if (withArtistName) {
 			swprintf(track, sizeof(track), L"%s - %s", artistName.get_ptr(), trackName.get_ptr());

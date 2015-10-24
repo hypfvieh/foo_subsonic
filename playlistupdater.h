@@ -18,18 +18,21 @@ public:
 				pfc::string8 codec = t.get_contentType();
 				codec << " (" << t.get_suffix() << ")";
 
+				int duration = atoi(t.get_duration());
+				int bitrate = atoi(t.get_bitrate());
+
 				f_info.meta_set("Artist", t.get_artist());
 				f_info.meta_set("Album", t.get_album());
 				f_info.meta_set("Title", t.get_title());
 				f_info.meta_set("Year", t.get_year());
-				f_info.meta_set("Tracknumber", std::to_string(t.get_tracknumber()).c_str());
-				f_info.set_length(t.get_duration()); // seconds
-				f_info.info_set_bitrate(t.get_bitrate());
+				f_info.meta_set("Tracknumber", t.get_tracknumber());
+				f_info.set_length(duration); // seconds
+				f_info.info_set_bitrate(bitrate);
 				f_info.meta_set("Genre", t.get_genre());
 				f_info.info_set("Codec", codec);
 
 				t_filestats stats = item.get_ptr()->get_filestats();
-				stats.m_size = t.get_size();
+				stats.m_size = atoi(t.get_size());
 
 				meta_db_io_api->hint_async(item.get_ptr(), f_info, stats, true);
 			}

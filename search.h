@@ -112,7 +112,8 @@ public:
 		for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
 			
 			char durationStr[20];
-			snprintf(durationStr, sizeof(durationStr), "%02d:%02d", (*trackIterator)->get_duration() / 60, (*trackIterator)->get_duration() % 60);
+			int iDuration = atoi((*trackIterator)->get_duration());
+			snprintf(durationStr, sizeof(durationStr), "%02d:%02d", iDuration / 60, iDuration % 60);
 
 			Track* store = *trackIterator;
 
