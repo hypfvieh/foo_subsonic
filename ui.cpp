@@ -120,7 +120,7 @@ LRESULT CSubsonicUi::OnLButtonDblClick(UINT, WPARAM, LPARAM, BOOL&) {
 				uDebugLog() << "Got Track=" << track->get_title() << ", Artist=" << track->get_artist();
 
 				const char* url = track->get_streamUrl().c_str();
-
+				console::printf("Adding URL: %s", track->get_streamUrl());
 				static_api_ptr_t<playlist_incoming_item_filter_v2>()->process_locations_async(
 					pfc::list_single_ref_t<const char*>(url),
 					playlist_incoming_item_filter_v2::op_flag_background,
@@ -148,11 +148,14 @@ LRESULT CSubsonicUi::OnLButtonDblClick(UINT, WPARAM, LPARAM, BOOL&) {
 					console::formatter() << "Got Playlist=" << playlist->get_name() << ", Entries=" << playlist->getTracks()->size();
 					trackList = playlist->getTracks();
 				}
+				else {
+					return 0;
+				}
 
 				if (trackList->size() > 0) {
 					std::list<Track*>::iterator trackIterator;
 					pfc::list_t<const char*> data;
-					for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {
+					for (trackIterator = trackList->begin(); trackIterator != trackList->end(); trackIterator++) {						
 						data.add_item((*trackIterator)->get_streamUrl());
 					}
 

@@ -1,5 +1,6 @@
 #include "foo_subsonic.h"
 #include "sqliteCacheDb.h"
+#include "SimpleHttpClientConfigurator.h"
 #include <regex>
 #include <sstream>
 
@@ -401,6 +402,12 @@ void SqliteCacheDb::parseTrackInfo(Track *t, SQLite::Statement *query_track) {
 	t->set_size(query_track->getColumn(10));
 	t->set_coverArt(query_track->getColumn(11));
 	t->set_artistId(query_track->getColumn(12));
+
+	pfc::string8 idparam = "id=";
+	idparam << t->get_id();
+	pfc::string8 streamUrl = SimpleHttpClientConfigurator::buildRequestUrl("stream", idparam);
+	t->set_streamUrl(streamUrl);
+
 }
 
 void SqliteCacheDb::getAllAlbumsFromCache() {
