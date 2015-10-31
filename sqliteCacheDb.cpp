@@ -412,7 +412,8 @@ void SqliteCacheDb::parseTrackInfo(Track *t, SQLite::Statement *query_track) {
 
 void SqliteCacheDb::getAllAlbumsFromCache() {
 	if (db == NULL) return;
-	SQLite::Statement query(*db, "SELECT albums.id, artists.artist, title, genre, year, coverArt, duration, songCount, artistId FROM albums, artists WHERE albums.artistId = artists.id");
+	// get all albums assigned to the artist and sorted by album name
+	SQLite::Statement query(*db, "SELECT albums.id, artists.artist, title, genre, year, coverArt, duration, songCount, artistId FROM albums, artists WHERE albums.artistId = artists.id ORDER BY title ASC");
 
 	while (query.executeStep()) {
 		Album a;
@@ -426,8 +427,8 @@ void SqliteCacheDb::getAllAlbumsFromCache() {
 		a.set_songCount(query.getColumn(7));
 		a.set_artistid(query.getColumn(8));
 
-		SQLite::Statement query_track(*db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt, artistId FROM tracks WHERE albumId = ?1");
-		uDebugLog() << "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt, artistId FROM tracks WHERE albumId = " << a.get_id();
+		// get all tracks from the current album sorted by tracknumber
+		SQLite::Statement query_track(*db, "SELECT id, albumId, title, duration, bitrate, contentType, genre, suffix, track, year, size, coverArt, artistId FROM tracks WHERE albumId = ?1 ORDER BY track ASC");
 		query_track.bind(1, a.get_id());
 
 		while (query_track.executeStep()) {
