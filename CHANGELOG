@@ -1,0 +1,9 @@
+
+Version 0.0.3:
+- Fixed: Album name was not added correctly after first restart of foobar after gathering catalog
+
+Version 0.0.2:
+- First public release
+
+Version 0.0.1:
+- Internal Release only

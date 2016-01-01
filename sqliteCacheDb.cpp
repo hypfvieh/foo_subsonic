@@ -435,7 +435,10 @@ void SqliteCacheDb::getAllAlbumsFromCache() {
 			Track* t = new Track();
 			parseTrackInfo(t, &query_track);
 			t->set_artist(a.get_artist());
+			t->set_album(a.get_title());
+
 			a.addTrack(t);
+			addToUrlMap(t);
 
 		}
 		albumlist.push_back(a);

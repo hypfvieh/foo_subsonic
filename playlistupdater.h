@@ -21,6 +21,8 @@ public:
 				int duration = atoi(t.get_duration());
 				int bitrate = atoi(t.get_bitrate());
 
+				uDebugLog() << "Artist: " << t.get_artist() << " - Album: " << t.get_album() << " - Title: " << t.get_title();
+
 				f_info.meta_set("Artist", t.get_artist());
 				f_info.meta_set("Album", t.get_album());
 				f_info.meta_set("Title", t.get_title());
