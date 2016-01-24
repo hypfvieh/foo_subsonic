@@ -268,6 +268,8 @@ void SqliteCacheDb::saveAlbums(threaded_process_status &p_status, abort_callback
 		query.bind(7, it->get_duration());
 		query.bind(8, it->get_songCount());
 
+		uDebugLog() << "Writing cache data for: " << it->get_artist() << " -- " << it->get_title();
+
 		// adding the tracks requires some extra work to speed up the writing of sqlite.
 		// doing all INSERTs seperately is incredibly slow, so we try some sort of batch processing here
 		if (query.exec() >= 1) {

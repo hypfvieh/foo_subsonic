@@ -1,4 +1,7 @@
 
+Version 0.0.4:
+- Fixed: Updating the album list of a selected artist did not add new albums, but just updates all existing albums
+
 Version 0.0.3:
 - Fixed: Album name was not added correctly after first restart of foobar after gathering catalog
 

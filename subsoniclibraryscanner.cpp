@@ -187,11 +187,21 @@ void SubsonicLibraryScanner::getAlbumAndTracksByArtistId(const char *artist_id, 
 				for (TiXmlElement* e = firstChild->FirstChildElement("album"); e != NULL; e = e->NextSiblingElement("album")) {
 					
 					Album a;
+					uDebugLog() << "Updating AlbumID: " << XmlStrOrDefault(e, "id", "unknown_error");
 					SqliteCacheDb::getInstance()->getAlbumById(XmlStrOrDefault(e, "id", "unknown_error"), a);
-					a.getTracks()->clear(); // remove previously stored tracks
-					uDebugLog() << "Updating Album: " << a.get_title();
 
-					getAlbumTracks(&a, p_abort); // add the new tracks
+					// check if this is a new album
+					if (a.get_id().is_empty()) { // albumId is empty, if cache did not find any stored entry						
+						parseAlbumInfo(e, &a);						
+						uDebugLog() << "Adding new album: " << a.get_title();
+						getAlbumTracks(&a, p_abort); // add the new tracks
+						SqliteCacheDb::getInstance()->addAlbum(a); // add the new album to cache
+					}
+					else {
+						a.getTracks()->clear(); // remove previously stored tracks
+						uDebugLog() << "Updating album: " << a.get_title();
+						getAlbumTracks(&a, p_abort); // add the new tracks
+					}
 				}
 			}
 		}
