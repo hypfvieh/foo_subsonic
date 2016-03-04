@@ -4,7 +4,7 @@
 
 
 I'm not a C++ programmer and just playing around here, so please be careful.
-I except to have a lot of memory leaks and/or doing bad practices here!
+I expect to have a lot of memory leaks and/or doing bad practices here!
 
 ## License
 My code is licensed with the [WTFPL](http://www.wtfpl.net).
@@ -30,3 +30,7 @@ Please look at the specific project for further details.
 
 ## Help
 Usage and FAQ can be found in the [Wiki](https://github.com/hypfvieh/foo_subsonic/wiki)
+
+## Missing Features
+* Drag and Drop is not working (any help appreciated)
+* List should have a built-in search box (edit control) to do direct filtering
