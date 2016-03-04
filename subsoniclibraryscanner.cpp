@@ -2,7 +2,7 @@
 #include "subsoniclibraryscanner.h"
 
 #include "album.h"
-#include "ui.h"
+#include "consts.h"
 #include "simplehttpclient.h"
 #include "xmlhelper.h"
 #include "sqliteCacheDb.h"
