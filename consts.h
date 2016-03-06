@@ -19,8 +19,8 @@
 
 	#define IDC_TREEVIEWCTRL					2053
 
-	#define TREE_ROOT_CATALOG					1
-	#define TREE_ROOT_PLAYLISTS					2
+	#define TREE_ROOT_CATALOG					0
+	#define TREE_ROOT_PLAYLISTS					1
 
 #define _CONSTS_
 #endif
