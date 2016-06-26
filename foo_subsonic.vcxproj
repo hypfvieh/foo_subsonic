@@ -104,6 +104,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="artistUpdateThread.cpp" />
+    <ClCompile Include="ContextMenu.cpp" />
     <ClCompile Include="FakeAlbumArtExtractor.cpp" />
     <ClCompile Include="initquit.cpp" />
     <ClCompile Include="main.cpp" />
@@ -121,6 +122,7 @@
     <ClCompile Include="xmlhelper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AddToPlaylistDlg.h" />
     <ClInclude Include="album.h" />
     <ClInclude Include="AlbumArtExtractorInstanceHttp.h" />
     <ClInclude Include="album_art.h" />

@@ -3,7 +3,7 @@
 #define COMPONENT_TITLE "Subsonic Streaming Client"
 #define COMPONENT_DLL_NAME "foo_subsonic.dll"
 #define COMPONENT_SHORT_NAME "foo_subsonic"
-#define COMPONENT_VERSION "0.0.4"
+#define COMPONENT_VERSION "0.0.5"
 
 
 #include "resource.h"

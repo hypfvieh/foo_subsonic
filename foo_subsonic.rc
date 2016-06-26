@@ -13,6 +13,66 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
+// Deutsch (Deutschland) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ADDTOPLAYLIST, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 232
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 103
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ADDTOPLAYLIST DIALOGEX 0, 0, 239, 110
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Add to (remote) Subsonic playlist"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,128,89,50,14
+    PUSHBUTTON      "Abbrechen",IDCANCEL,182,89,50,14
+    COMBOBOX        IDC_CB_AVAIL_PL,17,54,199,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_TXT_NEW_PL,17,24,199,14,ES_AUTOHSCROLL
+    CONTROL         "Add to new playlist:",IDC_RADIO_NEWPL,"Button",BS_AUTORADIOBUTTON | WS_GROUP,18,14,79,10
+    CONTROL         "Add to existing playlist:",IDC_RADIO_AVAILPL,"Button",BS_AUTORADIOBUTTON,18,42,91,10
+    PUSHBUTTON      "Refresh List",IDC_BTN_REFRESHLIST,17,71,50,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_ADDTOPLAYLIST AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+#endif    // Deutsch (Deutschland) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
 // Englisch (USA) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)

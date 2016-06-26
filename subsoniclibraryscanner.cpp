@@ -302,6 +302,80 @@ void SubsonicLibraryScanner::getPlaylistEntries(Playlist *playlist, abort_callba
 	}
 }
 
+/*
+	Adds songs to remote playlist
+*/
+void SubsonicLibraryScanner::addToPlaylist(pfc::string8 playlistId, std::list<Track*>* tracksToAdd, abort_callback &p_abort) {
+	pfc::string8 urlparms;
+	urlparms = "playlistId=";
+	urlparms << playlistId;
+
+	if (p_abort.is_aborting()) {
+		console::print("Playlist Track update aborted: stop");
+		return;
+	}
+
+	std::list<Track*>::iterator trackIterator;
+	
+	for (trackIterator = tracksToAdd->begin(); trackIterator != tracksToAdd->end(); trackIterator++) {
+		urlparms << "songIdToAdd=" << (*trackIterator)->get_id();
+	}
+
+	TiXmlDocument doc;
+
+	if (!connectAndGet(&doc, "updatePlaylist", urlparms)) { // error occoured, we are done
+		return;
+	}
+	
+}
+
+/*
+	Create a new remote playlist
+*/
+void SubsonicLibraryScanner::createNewPlayList(Playlist* playlist, abort_callback &p_abort) {
+	pfc::string8 urlparms;
+	urlparms << "name=" << SimpleHttpClientConfigurator::url_encode(playlist->get_name());
+
+	if (p_abort.is_aborting()) {
+		console::print("Playlist creation aborted: stop");
+		return;
+	}
+
+	TiXmlDocument doc;
+	if (!connectAndGet(&doc, "createPlaylist", urlparms)) { // error occoured, we are done
+		return;
+	}
+
+	// Set extended attributes like "comment"
+	updatePlaylistProps(playlist, p_abort);
+
+	// add tracks contained in this playlist
+	addToPlaylist(playlist->get_id(), playlist->getTracks(), p_abort);
+
+}
+
+/*
+	Update extended attributes of the playlist
+*/
+void SubsonicLibraryScanner::updatePlaylistProps(Playlist* playlist, abort_callback &p_abort) {
+	pfc::string8 urlparms;
+	urlparms = "playlistId=";
+	urlparms << playlist->get_id();
+	urlparms << "name=" << SimpleHttpClientConfigurator::url_encode(playlist->get_name()) << "&";
+	urlparms << "comment=" << SimpleHttpClientConfigurator::url_encode(playlist->get_comment()) << "&";
+	urlparms << "public=" << playlist->get_isPublic();
+
+	if (p_abort.is_aborting()) {
+		console::print("Playlist creation aborted: stop");
+		return;
+	}
+
+	TiXmlDocument doc;
+	if (!connectAndGet(&doc, "updatePlaylist", urlparms)) { // error occoured, we are done
+		return;
+	}
+
+}
 
 void SubsonicLibraryScanner::getSearchResults(const char* urlParams) {
 

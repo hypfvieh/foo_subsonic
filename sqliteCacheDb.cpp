@@ -450,7 +450,7 @@ void SqliteCacheDb::getAllAlbumsFromCache() {
 
 void SqliteCacheDb::getAllPlaylistsFromCache() {
 	if (db == NULL) return;
-	SQLite::Statement query(*db, "SELECT id, comment, duration, coverArt, public, name, owner, songCount FROM playlists");
+	SQLite::Statement query(*db, "SELECT id, comment, duration, coverArt, public, name, owner, songCount FROM playlists ORDER BY name ASC");
 
 	while (query.executeStep()) {
 		Playlist p;

@@ -15,6 +15,7 @@ namespace foo_subsonic {
 		friend class PlaylistQueryThread;
 		friend class SearchQueryThread;
 		friend class ArtistUpdateThread;
+		friend class PlaylistUpdateThread;
 	public:
 	protected:
 		void retrieveAllAlbums(HWND window, threaded_process_status &p_status, abort_callback &p_abort);
@@ -22,7 +23,6 @@ namespace foo_subsonic {
 		void retrieveAllSearchResults(HWND window, threaded_process_status &p_status, const char* url);
 
 		void retrieveArtistUpdate(HWND window, threaded_process_status &p_status, abort_callback &p_abort, const char* artistId);
-
 	private:
 		BOOL connectAndGet(TiXmlDocument* doc, const char* restMethod, const char* urlparams);
 		
@@ -35,6 +35,10 @@ namespace foo_subsonic {
 		void getAlbumAndTracksByArtistId(const char *artist_id, abort_callback &p_abort);
 		
 		void getSearchResults(const char* urlParams);
+
+		void addToPlaylist(pfc::string8 playlistId, std::list<Track*>* tracksToAdd, abort_callback &p_abort);
+		void createNewPlayList(Playlist* playlist, abort_callback &p_abort);
+		void updatePlaylistProps(Playlist* playlist, abort_callback &p_abort);
 
 		void parsingError(const char* message, const char* errCode);
 		bool checkForError(TiXmlDocument* xml);

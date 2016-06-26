@@ -13,6 +13,5 @@ namespace foo_subsonic {
 	private:
 		HWND window;
 		SubsonicLibraryScanner* scanner;
-		pfc::list_t<metadb_handle_ptr> *tracks;
 	};
 }
