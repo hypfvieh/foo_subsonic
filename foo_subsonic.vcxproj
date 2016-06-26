@@ -116,6 +116,7 @@
     <ClCompile Include="preferences.cpp" />
     <ClCompile Include="albumQueryThread.cpp" />
     <ClCompile Include="searchQueryThread.cpp" />
+    <ClCompile Include="PlaylistUpdateThread.cpp" />
     <ClCompile Include="sqliteCacheDb.cpp" />
     <ClCompile Include="subsoniclibraryscanner.cpp" />
     <ClCompile Include="ui.cpp" />
@@ -138,6 +139,7 @@
     <ClInclude Include="playlist.h" />
     <ClInclude Include="playlistQueryThread.h" />
     <ClInclude Include="playlistupdater.h" />
+    <ClInclude Include="PlaylistUpdateThread.h" />
     <ClInclude Include="preferences.h" />
     <ClInclude Include="albumQueryThread.h" />
     <ClInclude Include="resource.h" />
