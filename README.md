@@ -13,10 +13,11 @@ All used libraries and the foobar SDK are licensed under different license agree
 Please look at the specific project for further details.
 
 ## Requirements:
+* [WTL 9.x](http://wtl.sourceforge.net/) (I used 9.0) 
 * [TinyXML](http://sourceforge.net/projects/tinyxml/)
 * [SQLite3 amalgamation source](https://www.sqlite.org/download.html)
 * [SQLiteCPP](https://github.com/SRombauts/SQLiteCpp)
-* [Foobar2000 SDK](http://www.foobar2000.org/SDK)
+* [Foobar2000 SDK](http://www.foobar2000.org/SDK) (I used 2015-01-14, but newer versions should also be fine)
 * MS Visual Studio (at least version 2010, I use 2015 Community Edition)
 
 ## Build Setup
