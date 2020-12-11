@@ -1,5 +1,7 @@
 # foo_subsonic
 
+**!!This project is retired!!**
+
 **This is highly experimental code. Use at your own risk!**
 
 
